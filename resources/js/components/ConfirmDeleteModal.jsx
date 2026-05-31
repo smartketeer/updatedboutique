@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { Fragment } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
+import { Dialog, Transition } from '@headlessui/react';
 
 const COUNTDOWN_SECONDS = 5;
 
@@ -70,39 +71,48 @@ const ConfirmDeleteModal = ({
         return () => window.removeEventListener('keydown', handler);
     }, [open, onClose]);
 
-    if (!open) return null;
-
     const canConfirm = countdown === 0 && !confirming;
 
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-            {/* Backdrop */}
-            <div
-                className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-[fadeIn_150ms_ease-out]"
-                onClick={onClose}
-            />
+        <Transition appear show={open} as={Fragment}>
+            <Dialog as="div" className="relative z-[9999]" onClose={onClose}>
+                <Transition.Child
+                    as={Fragment}
+                    enter="ease-out duration-200"
+                    enterFrom="opacity-0"
+                    enterTo="opacity-100"
+                    leave="ease-in duration-150"
+                    leaveFrom="opacity-100"
+                    leaveTo="opacity-0"
+                >
+                    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
+                </Transition.Child>
 
-            {/* Card */}
-            <div
-                className="relative w-full max-w-md bg-white rounded-2xl border border-[#cbcbcb] shadow-2xl animate-[scaleIn_200ms_ease-out]"
-                role="alertdialog"
-                aria-modal="true"
-                aria-labelledby="confirm-delete-title"
-                aria-describedby="confirm-delete-desc"
-            >
-                {/* Header */}
-                <div className="flex items-start justify-between gap-3 px-6 pt-6 pb-0">
-                    <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center flex-shrink-0">
-                            <AlertTriangle size={22} className="text-red-500" />
-                        </div>
-                        <h2
-                            id="confirm-delete-title"
-                            className="text-base font-semibold text-[#3f3f46]"
+                <div className="fixed inset-0 overflow-y-auto">
+                    <div className="flex min-h-full items-center justify-center p-4 text-center">
+                        <Transition.Child
+                            as={Fragment}
+                            enter="ease-out duration-200"
+                            enterFrom="opacity-0 scale-95 translateY-4"
+                            enterTo="opacity-100 scale-100 translateY-0"
+                            leave="ease-in duration-150"
+                            leaveFrom="opacity-100 scale-100 translateY-0"
+                            leaveTo="opacity-0 scale-95 translateY-4"
                         >
-                            {title}
-                        </h2>
-                    </div>
+                            <Dialog.Panel className="relative w-full max-w-md transform overflow-hidden rounded-2xl bg-white text-left align-middle shadow-2xl transition-all border border-[#cbcbcb]">
+                                {/* Header */}
+                                <div className="flex items-start justify-between gap-3 px-6 pt-6 pb-0">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-11 h-11 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center flex-shrink-0">
+                                            <AlertTriangle size={22} className="text-red-500" />
+                                        </div>
+                                        <Dialog.Title
+                                            as="h2"
+                                            className="text-base font-semibold text-[#3f3f46]"
+                                        >
+                                            {title}
+                                        </Dialog.Title>
+                                    </div>
                     <button
                         type="button"
                         onClick={onClose}
@@ -114,7 +124,7 @@ const ConfirmDeleteModal = ({
                 </div>
 
                 {/* Body */}
-                <div id="confirm-delete-desc" className="px-6 pt-4 pb-2 space-y-3">
+                <div className="px-6 pt-4 pb-2 space-y-3">
                     {message ? (
                         <p className="text-sm text-[#818181] leading-relaxed">{message}</p>
                     ) : (
@@ -205,20 +215,13 @@ const ConfirmDeleteModal = ({
                             'Delete'
                         )}
                     </button>
+                                </div>
+                            </Dialog.Panel>
+                        </Transition.Child>
+                    </div>
                 </div>
-            </div>
-
-            <style>{`
-                @keyframes fadeIn {
-                    from { opacity: 0; }
-                    to   { opacity: 1; }
-                }
-                @keyframes scaleIn {
-                    from { opacity: 0; transform: scale(0.95) translateY(8px); }
-                    to   { opacity: 1; transform: scale(1) translateY(0); }
-                }
-            `}</style>
-        </div>
+            </Dialog>
+        </Transition>
     );
 };
 

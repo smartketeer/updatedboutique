@@ -446,12 +446,20 @@ const CashierAccounts = () => {
                 <div className="lg:col-span-3 bg-white border border-[#19140015] rounded-3xl shadow-sm overflow-hidden">
                     <div className="px-6 py-4 border-b border-[#19140015] bg-white/70 backdrop-blur flex items-center justify-between">
                         <h2 className="text-sm font-semibold text-[#818181]">Cashier List</h2>
-                        <button
-                            onClick={fetchCashiers}
-                            className="px-3 py-1.5 text-xs font-semibold border border-[#19140035] rounded-xl hover:bg-[#fff7f9]"
-                        >
-                            Refresh
-                        </button>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={resetForm}
+                                className="px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-[#4a2437] to-[#d94a79] rounded-xl hover:opacity-95 shadow-sm transition-opacity"
+                            >
+                                Add Cashier
+                            </button>
+                            <button
+                                onClick={fetchCashiers}
+                                className="px-3 py-1.5 text-xs font-semibold border border-[#19140035] rounded-xl hover:bg-[#fff7f9]"
+                            >
+                                Refresh
+                            </button>
+                        </div>
                     </div>
 
                     {loading ? (

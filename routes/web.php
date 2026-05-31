@@ -21,6 +21,27 @@ Route::get('/setup-storage', function () {
     }
 });
 
+Route::get('/run-import', function (\Illuminate\Http\Request $request) {
+    $branch = $request->query('branch');
+    $file = $request->query('file');
+    
+    if (!$branch || !$file) {
+        return "Missing 'branch' or 'file' query parameters.";
+    }
+
+    $filePath = base_path($file);
+
+    try {
+        Artisan::call('import:inventory', [
+            'branch_name' => $branch,
+            'file_path' => $filePath
+        ]);
+        return '<pre>' . Artisan::output() . '</pre>';
+    } catch (\Exception $e) {
+        return 'Error: ' . $e->getMessage();
+    }
+});
+
 Route::get('/{any}', function () {
     return view('welcome');
 })->where('any', '.*');

@@ -18,6 +18,7 @@ const Dashboard = () => {
         lowStockCount: 0,
         valuationBranches: [],
     });
+    const [activeValuationIndex, setActiveValuationIndex] = useState(0);
     const [loading, setLoading] = useState(true);
     const [recentActivity, setRecentActivity] = useState([]);
     const [activityLoading, setActivityLoading] = useState(false);
@@ -140,14 +141,19 @@ const Dashboard = () => {
         }
     };
 
-    const valuationCards = (stats.valuationBranches || []).map(b => ({
-        title: `${b.name} Est. Retail Value`,
-        value: `${PESO}${b.estimated_value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+    const branches = stats.valuationBranches || [];
+    const activeBranch = branches.length > 0 ? branches[activeValuationIndex % branches.length] : null;
+
+    const valuationCard = activeBranch ? {
+        title: `${activeBranch.name} Est. Retail Value`,
+        value: `${PESO}${activeBranch.estimated_value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
         icon: Package,
         color: 'text-[#d94a79]',
         bg: 'bg-[#d94a79]/10',
         blob: 'bg-[#d94a79]/20',
-    }));
+        onClick: () => setActiveValuationIndex((prev) => (prev + 1) % branches.length),
+        interactiveText: branches.length > 1 ? 'Tap to Switch' : undefined,
+    } : null;
 
     const cards = [
         ...(user?.role === 'admin'
@@ -168,7 +174,7 @@ const Dashboard = () => {
                       bg: 'bg-emerald-50',
                       blob: 'bg-emerald-500/10',
                   },
-                  ...valuationCards,
+                  ...(valuationCard ? [valuationCard] : []),
               ]
             : []),
         { title: 'Low Stock Alerts', value: stats.lowStockCount, icon: AlertTriangle, color: 'text-red-600', bg: 'bg-[#dddddd]', blob: 'bg-[#dddddd]/10' },
@@ -217,12 +223,18 @@ const Dashboard = () => {
                     return (
                         <div
                             key={i}
-                            className="relative overflow-hidden bg-white border border-[#cbcbcb] p-6 rounded-2xl shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group"
+                            onClick={card.onClick}
+                            className={`relative overflow-hidden bg-white border border-[#cbcbcb] p-6 rounded-2xl shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group ${card.onClick ? 'cursor-pointer select-none' : ''}`}
                         >
                             <div className="flex items-center justify-between mb-5 relative z-10">
                                 <span className={`p-3.5 rounded-2xl ${card.bg} ${card.color} border border-white/50 shadow-sm group-hover:scale-110 transition-transform duration-300`}>
                                     <Icon size={24} strokeWidth={1.5} />
                                 </span>
+                                {card.interactiveText && (
+                                    <span className="text-[10px] uppercase tracking-wider font-semibold bg-white/50 text-[#a6a6a6] px-2 py-1 rounded-full border border-[#cbcbcb]/50">
+                                        {card.interactiveText}
+                                    </span>
+                                )}
                             </div>
                             <h3 className="text-xs font-medium text-[#a6a6a6] uppercase tracking-widest relative z-10">{card.title}</h3>
                             <p className="text-3xl font-semibold text-[#818181] mt-2 tracking-tight relative z-10">{card.value}</p>

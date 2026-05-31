@@ -141,8 +141,8 @@ const Dashboard = () => {
     };
 
     const valuationCards = (stats.valuationBranches || []).map(b => ({
-        title: `${b.name} Value`,
-        value: `${PESO}${b.valuation.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        title: `${b.name} Est. Retail Value`,
+        value: `${PESO}${b.estimated_value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
         icon: Package,
         color: 'text-[#d94a79]',
         bg: 'bg-[#d94a79]/10',

@@ -173,34 +173,41 @@ class ReportingController extends Controller
     public function inventoryValuation()
     {
         $hasBranchCost = Schema::hasColumn('branch_item_stocks', 'cost');
-        $expr = $hasBranchCost
-            ? 'COALESCE(SUM(branch_item_stocks.quantity * COALESCE(branch_item_stocks.cost, items.cost)), 0) as total'
-            : 'COALESCE(SUM(branch_item_stocks.quantity * items.cost), 0) as total';
+        $exprCost = $hasBranchCost
+            ? 'COALESCE(SUM(branch_item_stocks.quantity * COALESCE(branch_item_stocks.cost, items.cost)), 0) as total_cost'
+            : 'COALESCE(SUM(branch_item_stocks.quantity * items.cost), 0) as total_cost';
+        $exprPrice = 'COALESCE(SUM(branch_item_stocks.quantity * items.price), 0) as total_price';
 
-        $totalValuation = (float) BranchItemStock::query()
+        $globalTotals = BranchItemStock::query()
             ->join('items', 'items.id', '=', 'branch_item_stocks.item_id')
             ->where('items.is_service', false)
-            ->selectRaw($expr)
-            ->value('total');
+            ->selectRaw("$exprCost, $exprPrice")
+            ->first();
+
+        $totalValuation = (float) ($globalTotals->total_cost ?? 0);
+        $totalEstimatedValue = (float) ($globalTotals->total_price ?? 0);
 
         $branches = \App\Models\Branch::all();
         $branchValuations = [];
         foreach ($branches as $branch) {
-            $val = (float) BranchItemStock::query()
+            $branchTotals = BranchItemStock::query()
                 ->join('items', 'items.id', '=', 'branch_item_stocks.item_id')
                 ->where('items.is_service', false)
                 ->where('branch_id', $branch->id)
-                ->selectRaw($expr)
-                ->value('total');
+                ->selectRaw("$exprCost, $exprPrice")
+                ->first();
+                
             $branchValuations[] = [
                 'id' => $branch->id,
                 'name' => $branch->name,
-                'valuation' => $val,
+                'valuation' => (float) ($branchTotals->total_cost ?? 0),
+                'estimated_value' => (float) ($branchTotals->total_price ?? 0),
             ];
         }
 
         return response()->json([
             'total_valuation' => $totalValuation,
+            'total_estimated_value' => $totalEstimatedValue,
             'branches' => $branchValuations,
         ]);
     }

@@ -1,0 +1,169 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Branch;
+use App\Models\User;
+use App\Services\BranchResolver;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
+
+class AuthController extends Controller
+{
+    public function login(Request $request)
+    {
+        $request->validate([
+            'email'    => ['required', 'email'],
+            'password' => 'required',
+        ]);
+
+        $email = strtolower((string) $request->email);
+        if (! preg_match('/^[a-z0-9._-]+@boutique\.com$/', $email)) {
+            throw ValidationException::withMessages([
+                'email' => ['Unauthorized email format. Use a valid @boutique.com email.'],
+            ]);
+        }
+
+        $user = User::where('email', $email)->first();
+
+        if (! $user || ! Hash::check($request->password, $user->password)) {
+            \Log::warning('Login attempt failed for user: '.$request->email, [
+                'ip'          => $request->ip(),
+                'user_exists' => (bool) $user,
+            ]);
+            throw ValidationException::withMessages([
+                'email' => ['The provided credentials are incorrect.'],
+            ]);
+        }
+
+        try {
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            \Log::info('User logged in: '.$user->email, [
+                'role' => $user->role,
+                'ip'   => $request->ip(),
+            ]);
+
+            // Load branch relationships
+            $user->load(['branch:id,name,is_active', 'branches:id,name,is_active']);
+
+            // Determine if branch selection is required (staff with multiple branches)
+            $requiresBranchSelection = false;
+            $activeBranches = [];
+
+            if ($user->role === 'staff') {
+                $activeBranches = $user->branches
+                    ->where('is_active', true)
+                    ->values();
+
+                $requiresBranchSelection = $activeBranches->count() > 1;
+            }
+
+            $response = [
+                'access_token' => $token,
+                'token_type'   => 'Bearer',
+                'user'         => $user,
+            ];
+
+            if ($user->role === 'staff') {
+                $response['requires_branch_selection'] = $requiresBranchSelection;
+                // Always include the active branches list so the frontend can render the picker
+                $response['available_branches'] = $activeBranches->map(fn ($b) => [
+                    'id'        => $b->id,
+                    'name'      => $b->name,
+                    'is_active' => (bool) $b->is_active,
+                ])->values();
+            }
+
+            return response()->json($response);
+        } catch (\Exception $e) {
+            \Log::error('Token creation failed for user: '.$user->email, [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return response()->json(['message' => 'Internal server error during authentication'], 500);
+        }
+    }
+
+    public function logout(Request $request)
+    {
+        $tokenId = $request->user()->currentAccessToken()->id;
+
+        // Clear any cached active branch before revoking the token
+        BranchResolver::clearActiveBranch($tokenId);
+
+        $request->user()->currentAccessToken()->delete();
+
+        return response()->json(['message' => 'Logged out successfully']);
+    }
+
+    public function me(Request $request)
+    {
+        $user = $request->user()?->load(['branch:id,name,is_active', 'branches:id,name,is_active']);
+
+        if (! $user) {
+            return response()->json(null);
+        }
+
+        $data = $user->toArray();
+
+        // Resolve active branch for staff users
+        if ($user->role === 'staff') {
+            $tokenId = $request->user()->currentAccessToken()->id;
+            $cacheKey = BranchResolver::cacheKey($tokenId);
+            $cachedBranchId = Cache::get($cacheKey);
+
+            if ($cachedBranchId !== null) {
+                $activeBranch = \App\Models\Branch::select('id', 'name', 'is_active')
+                    ->find((int) $cachedBranchId);
+            } else {
+                $activeBranch = $user->branch;
+            }
+
+            $data['active_branch'] = $activeBranch ? [
+                'id'        => $activeBranch->id,
+                'name'      => $activeBranch->name,
+                'is_active' => (bool) $activeBranch->is_active,
+            ] : null;
+        }
+
+        return response()->json($data);
+    }
+
+    public function selectBranch(Request $request)
+    {
+        $request->validate([
+            'branch_id' => ['required', 'integer'],
+        ]);
+
+        $user    = $request->user();
+        $tokenId = $user->currentAccessToken()->id;
+        $branchId = (int) $request->branch_id;
+
+        // Confirm the requested branch is in the user's pivot AND is active
+        $branch = $user->branches()
+            ->where('branches.id', $branchId)
+            ->where('branches.is_active', true)
+            ->first();
+
+        if (! $branch) {
+            throw ValidationException::withMessages([
+                'branch_id' => ['The selected branch is not assigned to your account or is not active.'],
+            ]);
+        }
+
+        // Store the selection in cache scoped to this token
+        BranchResolver::setActiveBranch($tokenId, $branchId);
+
+        return response()->json([
+            'message' => 'Branch selected.',
+            'branch'  => [
+                'id'   => $branch->id,
+                'name' => $branch->name,
+            ],
+        ]);
+    }
+}

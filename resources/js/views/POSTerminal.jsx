@@ -423,11 +423,16 @@ const POSTerminal = () => {
             if (res?.data) {
                 handleAddToCart(res.data);
                 setSkuSearch('');
+                setSearch('');
                 return;
             }
-            alert('Item not found');
+            if (/^[a-zA-Z0-9_-]{5,}$/.test(sku)) {
+                setStockNotice('Barcode not found: ' + sku);
+            }
         } catch {
-            alert('Item not found');
+            if (/^[a-zA-Z0-9_-]{5,}$/.test(sku)) {
+                setStockNotice('Barcode not found: ' + sku);
+            }
         }
     };
 

@@ -119,27 +119,37 @@ const CashierHistory = () => {
                                 <tr>
                                     <th className="text-left px-6 py-3 font-semibold">Date</th>
                                     <th className="text-left px-6 py-3 font-semibold">Client</th>
+                                    <th className="text-left px-6 py-3 font-semibold">Item</th>
                                     <th className="text-left px-6 py-3 font-semibold">Payment</th>
                                     <th className="text-right px-6 py-3 font-semibold">Discount</th>
                                     <th className="text-right px-6 py-3 font-semibold">Total</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {sales.map((sale) => (
-                                    <tr key={sale.id} className="border-b border-[#19140010] hover:bg-[#F8F6F3]/40">
-                                        <td className="px-6 py-3 text-[#818181]">
-                                            {new Date(sale.created_at).toLocaleString()}
-                                        </td>
-                                        <td className="px-6 py-3 text-[#818181]">
-                                            {sale.client?.name || (sale.customer_type === 'online' ? 'Online Customer' : 'Walk In Customer')}
-                                        </td>
-                                        <td className="px-6 py-3 capitalize text-[#a6a6a6] font-medium">{sale.payment_method}</td>
-                                        <td className="px-6 py-3 text-right text-[#a6a6a6]">{PESO}{Number(sale.discount || 0).toLocaleString()}</td>
-                                        <td className="px-6 py-3 text-right font-medium text-[#2D4F3E]">
-                                            {PESO}{Number(sale.total_amount || 0).toLocaleString()}
-                                        </td>
-                                    </tr>
-                                ))}
+                                {sales.map((sale) => {
+                                    const items = sale.sale_items?.map(si => `${si.item?.name} (x${si.quantity})`) || [];
+                                    const customItems = sale.custom_items?.map(ci => `${ci.name} (x${ci.quantity})`) || [];
+                                    const allItems = [...items, ...customItems].join(', ') || '-';
+                                    
+                                    return (
+                                        <tr key={sale.id} className="border-b border-[#19140010] hover:bg-[#F8F6F3]/40">
+                                            <td className="px-6 py-3 text-[#818181]">
+                                                {new Date(sale.created_at).toLocaleString()}
+                                            </td>
+                                            <td className="px-6 py-3 text-[#818181]">
+                                                {sale.client?.name || (sale.customer_type === 'online' ? 'Online Customer' : 'Walk In Customer')}
+                                            </td>
+                                            <td className="px-6 py-3 text-[#818181] max-w-xs truncate" title={allItems}>
+                                                {allItems}
+                                            </td>
+                                            <td className="px-6 py-3 capitalize text-[#a6a6a6] font-medium">{sale.payment_method}</td>
+                                            <td className="px-6 py-3 text-right text-[#a6a6a6]">{PESO}{Number(sale.discount || 0).toLocaleString()}</td>
+                                            <td className="px-6 py-3 text-right font-medium text-[#2D4F3E]">
+                                                {PESO}{Number(sale.total_amount || 0).toLocaleString()}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>

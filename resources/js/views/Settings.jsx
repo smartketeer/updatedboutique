@@ -14,7 +14,7 @@ const ToggleSwitch = ({ checked, onChange, title, description, saving }) => (
             onClick={() => onChange(!checked)}
             disabled={saving}
             className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[#818181] focus-visible:ring-offset-2 shadow-inner disabled:opacity-50 disabled:cursor-not-allowed ${
-                checked ? 'bg-[#818181]' : 'bg-zinc-200'
+                checked ? 'bg-emerald-500' : 'bg-zinc-200'
             }`}
             aria-pressed={checked}
         >

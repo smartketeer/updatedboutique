@@ -19,7 +19,22 @@ if (!$branch || !$file) {
 $filePath = base_path($file);
 
 if (!file_exists($filePath)) {
-    echo "File not found: " . $filePath;
+    echo "<h3>Error: File not found</h3>";
+    echo "<p>Looking for: <strong>" . htmlspecialchars($filePath) . "</strong></p>";
+    
+    $dir = dirname($filePath);
+    echo "<p>Contents of directory <strong>" . htmlspecialchars($dir) . "</strong>:</p><ul>";
+    if (is_dir($dir)) {
+        $files = scandir($dir);
+        foreach ($files as $f) {
+            if ($f !== '.' && $f !== '..') {
+                echo "<li>" . htmlspecialchars($f) . "</li>";
+            }
+        }
+    } else {
+        echo "<li>Directory does not exist.</li>";
+    }
+    echo "</ul>";
     exit;
 }
 

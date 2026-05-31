@@ -222,18 +222,10 @@ class CashierInventoryController extends Controller
             'cost' => 'sometimes|required|numeric|min:0',
             'stock_qty' => 'sometimes|required|integer|min:0',
             'is_service' => 'sometimes|required|boolean',
-            'adjustment_reason' => 'nullable|string|max:500',
+            'adjustment_reason' => 'required|string|max:500',
+        ], [
+            'adjustment_reason.required' => 'An adjustment reason is required when modifying any product details.',
         ]);
-
-        // Require an adjustment reason when stock quantity is explicitly changed
-        if (array_key_exists('stock_qty', $validated)) {
-            $adjustmentReason = trim((string) ($validated['adjustment_reason'] ?? ''));
-            if ($adjustmentReason === '') {
-                throw ValidationException::withMessages([
-                    'adjustment_reason' => 'An adjustment reason is required when modifying the stock quantity.',
-                ]);
-            }
-        }
 
         return DB::transaction(function () use ($request, $validated, $item) {
             $user = $request->user();

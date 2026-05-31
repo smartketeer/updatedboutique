@@ -299,6 +299,15 @@ const Dashboard = () => {
                                                                     {method && <> {BULLET} <span className="capitalize">{method}</span></>}
                                                                 </p>
                                                             </>
+                                                        ) : a.event_type === 'inventory_item_updated' ? (
+                                                            <>
+                                                                <p className="text-xs text-[#818181] font-medium leading-relaxed">
+                                                                    Updated: {a.metadata?.item_name || 'Item'}
+                                                                </p>
+                                                                <p className="text-xs text-[#a6a6a6] mt-1">
+                                                                    Reason: <span className="font-medium text-[#818181]">{a.metadata?.adjustment_reason || EM_DASH}</span>
+                                                                </p>
+                                                            </>
                                                         ) : (
                                                             <p className="text-xs text-[#a6a6a6] leading-relaxed">{a.description || a.event_type}</p>
                                                         )}

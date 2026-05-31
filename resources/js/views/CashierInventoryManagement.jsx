@@ -266,16 +266,12 @@ const CashierInventoryManagement = () => {
         e.preventDefault();
         setError('');
 
-        // Frontend validation: adjustment_reason required when stock qty changes
+        // Frontend validation: adjustment_reason required when editing any detail
         if (editingItem) {
-            const originalStock = editingItem.stock_qty != null ? Number(editingItem.stock_qty) : 0;
-            const newStock = Number(itemForm.stock_qty || 0);
-            if (!editingItem.is_service && newStock !== originalStock) {
-                const reason = (itemForm.adjustment_reason || '').trim();
-                if (!reason) {
-                    setError('An adjustment reason is required when modifying the stock quantity.');
-                    return;
-                }
+            const reason = (itemForm.adjustment_reason || '').trim();
+            if (!reason) {
+                setError('An adjustment reason is required when modifying product details.');
+                return;
             }
         }
 
@@ -933,7 +929,7 @@ const CashierInventoryManagement = () => {
                                                 />
                                             </div>
                                         </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                        <div className={`grid grid-cols-1 gap-3 ${editingItem ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-3'}`}>
                                             <div>
                                                 <label className="block text-xs font-semibold text-[#a6a6a6] mb-1">Price</label>
                                                 <input
@@ -971,38 +967,22 @@ const CashierInventoryManagement = () => {
                                                     disabled={itemForm.is_service}
                                                 />
                                             </div>
+                                            {editingItem ? (
+                                                <div>
+                                                    <label className="block text-xs font-semibold text-[#a6a6a6] mb-1">
+                                                        Adjustment Reason
+                                                        <span className="text-red-500 ml-1">* Required</span>
+                                                    </label>
+                                                    <input
+                                                        value={itemForm.adjustment_reason}
+                                                        onChange={(e) => setItemForm((f) => ({ ...f, adjustment_reason: e.target.value }))}
+                                                        className="w-full px-3 py-2 border border-[#cbcbcb] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#818181]/20 focus:border-[#818181] bg-white text-[#818181] font-medium transition-all"
+                                                        placeholder="Required for any changes"
+                                                        required
+                                                    />
+                                                </div>
+                                            ) : null}
                                         </div>
-                                        {editingItem ? (
-                                            <div>
-                                                <label className="block text-xs font-semibold text-[#a6a6a6] mb-1">
-                                                    Adjustment Reason
-                                                    {(() => {
-                                                        const originalStock = editingItem.stock_qty != null ? Number(editingItem.stock_qty) : 0;
-                                                        const newStock = Number(itemForm.stock_qty || 0);
-                                                        return (!editingItem.is_service && newStock !== originalStock)
-                                                            ? <span className="text-red-500 ml-1">* Required</span>
-                                                            : <span className="text-[#cbcbcb] ml-1">(Optional)</span>;
-                                                    })()}
-                                                </label>
-                                                <input
-                                                    value={itemForm.adjustment_reason}
-                                                    onChange={(e) => setItemForm((f) => ({ ...f, adjustment_reason: e.target.value }))}
-                                                    className="w-full px-3 py-2 border border-[#cbcbcb] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#818181]/20 focus:border-[#818181] bg-white text-[#818181] font-medium transition-all"
-                                                    placeholder={(() => {
-                                                        const originalStock = editingItem.stock_qty != null ? Number(editingItem.stock_qty) : 0;
-                                                        const newStock = Number(itemForm.stock_qty || 0);
-                                                        return (!editingItem.is_service && newStock !== originalStock)
-                                                            ? 'Required when stock quantity changes'
-                                                            : 'e.g. Price correction, restocking...';
-                                                    })()}
-                                                    required={(() => {
-                                                        const originalStock = editingItem.stock_qty != null ? Number(editingItem.stock_qty) : 0;
-                                                        const newStock = Number(itemForm.stock_qty || 0);
-                                                        return !editingItem.is_service && newStock !== originalStock;
-                                                    })()}
-                                                />
-                                            </div>
-                                        ) : null}
                                         <div className="flex items-center gap-2">
                                             <input
                                                 id="is_service"

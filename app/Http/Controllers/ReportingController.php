@@ -183,8 +183,25 @@ class ReportingController extends Controller
             ->selectRaw($expr)
             ->value('total');
 
+        $branches = \App\Models\Branch::all();
+        $branchValuations = [];
+        foreach ($branches as $branch) {
+            $val = (float) BranchItemStock::query()
+                ->join('items', 'items.id', '=', 'branch_item_stocks.item_id')
+                ->where('items.is_service', false)
+                ->where('branch_id', $branch->id)
+                ->selectRaw($expr)
+                ->value('total');
+            $branchValuations[] = [
+                'id' => $branch->id,
+                'name' => $branch->name,
+                'valuation' => $val,
+            ];
+        }
+
         return response()->json([
             'total_valuation' => $totalValuation,
+            'branches' => $branchValuations,
         ]);
     }
 }

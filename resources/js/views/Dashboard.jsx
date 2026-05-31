@@ -16,6 +16,7 @@ const Dashboard = () => {
         revenue: 0,
         transactions: 0,
         lowStockCount: 0,
+        valuationBranches: [],
     });
     const [loading, setLoading] = useState(true);
     const [recentActivity, setRecentActivity] = useState([]);
@@ -35,12 +36,14 @@ const Dashboard = () => {
                 const requests = [
                     isStaff ? Promise.resolve({ data: { total_revenue: 0, total_transactions: 0 } }) : axios.get('/api/reports/daily-summary'),
                     axios.get('/api/inventory/low-stock'),
+                    isStaff ? Promise.resolve({ data: { branches: [] } }) : axios.get('/api/reports/inventory-valuation'),
                 ];
-                const [dailyRes, lowStockRes] = await Promise.all(requests);
+                const [dailyRes, lowStockRes, valRes] = await Promise.all(requests);
                 setStats({
                     revenue: dailyRes.data.total_revenue || 0,
                     transactions: dailyRes.data.total_transactions || 0,
                     lowStockCount: lowStockRes.data.length || 0,
+                    valuationBranches: valRes.data.branches || [],
                 });
             } catch (err) {
                 console.error('Failed to fetch stats', err);
@@ -137,6 +140,15 @@ const Dashboard = () => {
         }
     };
 
+    const valuationCards = (stats.valuationBranches || []).map(b => ({
+        title: `${b.name} Value`,
+        value: `${PESO}${b.valuation.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        icon: Package,
+        color: 'text-[#d94a79]',
+        bg: 'bg-[#d94a79]/10',
+        blob: 'bg-[#d94a79]/20',
+    }));
+
     const cards = [
         ...(user?.role === 'admin'
             ? [
@@ -156,6 +168,7 @@ const Dashboard = () => {
                       bg: 'bg-emerald-50',
                       blob: 'bg-emerald-500/10',
                   },
+                  ...valuationCards,
               ]
             : []),
         { title: 'Low Stock Alerts', value: stats.lowStockCount, icon: AlertTriangle, color: 'text-red-600', bg: 'bg-[#dddddd]', blob: 'bg-[#dddddd]/10' },
@@ -198,7 +211,7 @@ const Dashboard = () => {
                 </div>
             )}
 
-            <div className={`grid grid-cols-1 md:grid-cols-2 ${user?.role === 'admin' ? 'lg:grid-cols-3' : 'lg:grid-cols-1'} gap-6`}>
+            <div className={`grid grid-cols-1 md:grid-cols-2 ${user?.role === 'admin' ? 'lg:grid-cols-4' : 'lg:grid-cols-1'} gap-6`}>
                 {cards.map((card, i) => {
                     const Icon = card.icon;
                     return (

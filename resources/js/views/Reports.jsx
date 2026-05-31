@@ -424,7 +424,9 @@ const Reports = () => {
                                 const hovered = hoveredRevenueIndex != null ? points[hoveredRevenueIndex] : null;
                                 const hoveredDateObj = hovered ? new Date(`${hovered.date}T00:00:00`) : null;
                                 const hoveredLabel = hoveredDateObj
-                                    ? revenueRange === 'month'
+                                    ? revenueRange === 'year'
+                                        ? hoveredDateObj.toLocaleDateString(undefined, { year: 'numeric' })
+                                        : revenueRange === 'month'
                                         ? hoveredDateObj.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
                                         : hoveredDateObj.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })
                                     : '';
@@ -486,7 +488,9 @@ const Reports = () => {
                                             {points.map((p, idx) => {
                                                 const dateObj = new Date(`${p.date}T00:00:00`);
                                                 const xLabel =
-                                                    revenueRange === 'month'
+                                                    revenueRange === 'year'
+                                                        ? dateObj.toLocaleDateString(undefined, { year: 'numeric' })
+                                                        : revenueRange === 'month'
                                                         ? dateObj.toLocaleDateString(undefined, { month: 'short' })
                                                         : dateObj.toLocaleDateString(undefined, { weekday: 'short' });
                                                 const active = hoveredRevenueIndex === idx;

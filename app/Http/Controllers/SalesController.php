@@ -407,9 +407,15 @@ class SalesController extends Controller
         }
 
         if ($branchId = request()->query('branch_id')) {
-            $saleIds = ActivityLog::where('event_type', 'sale_completed')
-                ->where('metadata->branch_id', (int) $branchId)
-                ->pluck('metadata->sale_id');
+            $logs = ActivityLog::select('metadata')->where('event_type', 'sale_completed')->get();
+            $saleIds = [];
+            foreach ($logs as $log) {
+                if (isset($log->metadata['branch_id']) && $log->metadata['branch_id'] == $branchId) {
+                    if (isset($log->metadata['sale_id'])) {
+                        $saleIds[] = $log->metadata['sale_id'];
+                    }
+                }
+            }
             $query->whereIn('id', $saleIds);
         }
 

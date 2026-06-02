@@ -14,7 +14,7 @@ const Login = () => {
     const branchName = useAuthStore((state) => state.branchName);
 
     const branches = [lunaBranch, roxasBranch];
-    const [selectedBranch, setSelectedBranch] = useState(lunaBranch.key);
+    const [selectedBranch, setSelectedBranch] = useState('');
 
     const tryAutofillEmail = (branchKey) => {
         // Feature removed as requested; now it only sets the selected branch context.
@@ -54,7 +54,7 @@ const Login = () => {
     const branding = useMemo(() => {
         if (selectedBranch === lunaBranch.key) return lunaBranch;
         if (selectedBranch === roxasBranch.key) return roxasBranch;
-        return lunaBranch;
+        return null;
     }, [selectedBranch]);
 
     const handleSubmit = async (e) => {
@@ -64,9 +64,15 @@ const Login = () => {
         try {
             if (!inferred.ok) {
                 setError(inferred.message || 'Please enter a valid email.');
+                setLoading(false);
                 return;
             }
-            const user = await login(email, password, selectedBranch);
+            if (!isAdminEmail && !selectedBranch) {
+                setError('Please select a branch to continue.');
+                setLoading(false);
+                return;
+            }
+            const user = await login(email, password, selectedBranch || 'luna');
             // The authStore.login already handles branch selection via /api/select-branch
             // Navigate to the role-appropriate page
             navigate('/');
@@ -86,18 +92,18 @@ const Login = () => {
 
             <div className="w-full max-w-[420px] p-6 sm:p-8 bg-white/80 backdrop-blur-xl rounded-[1.75rem] shadow-2xl border border-white/50 relative z-10 mx-4">
                 <div className="text-center mb-6">
-                    <div className="flex justify-center mb-4">
-                        {isAdminEmail ? (
+                    <div className="flex justify-center mb-4 h-20">
+                        {isAdminEmail || !branding ? (
                             <div className="flex items-center justify-center gap-3">
-                                <div className="w-16 h-16 rounded-3xl bg-white shadow-lg border border-zinc-100 flex items-center justify-center p-3">
+                                <div className="w-16 h-16 rounded-3xl bg-white shadow-lg border border-zinc-100 flex items-center justify-center p-3 animate-in fade-in duration-300">
                                     <img src={lunaBranch.logoSrc} alt="Luna Branch logo" className="w-full h-full object-contain drop-shadow-sm" />
                                 </div>
-                                <div className="w-16 h-16 rounded-3xl bg-white shadow-lg border border-zinc-100 flex items-center justify-center p-3">
+                                <div className="w-16 h-16 rounded-3xl bg-white shadow-lg border border-zinc-100 flex items-center justify-center p-3 animate-in fade-in duration-300">
                                     <img src={roxasBranch.logoSrc} alt="Roxas Branch logo" className="w-full h-full object-contain drop-shadow-sm" />
                                 </div>
                             </div>
                         ) : (
-                            <div className="w-20 h-20 rounded-3xl bg-white shadow-lg border border-zinc-100 flex items-center justify-center p-3">
+                            <div className="w-20 h-20 rounded-3xl bg-white shadow-lg border border-zinc-100 flex items-center justify-center p-3 animate-in zoom-in duration-300">
                                 <img src={branding.logoSrc} alt={`${branding.name} logo`} className="w-full h-full object-contain drop-shadow-sm" />
                             </div>
                         )}

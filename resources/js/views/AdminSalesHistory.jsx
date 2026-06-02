@@ -15,8 +15,19 @@ const AdminSalesHistory = () => {
     const [paymentMethod, setPaymentMethod] = React.useState('all');
     const [q, setQ] = React.useState('');
     const [page, setPage] = React.useState(1);
+    const [branches, setBranches] = React.useState([]);
 
-    const branches = [lunaBranch, roxasBranch];
+    React.useEffect(() => {
+        const loadBranches = async () => {
+            try {
+                const res = await axios.get('/api/branches');
+                setBranches(res.data || []);
+            } catch (err) {
+                console.error('Failed to load branches', err);
+            }
+        };
+        loadBranches();
+    }, []);
 
     const fetchSales = React.useCallback(async () => {
         setLoading(true);
@@ -102,7 +113,7 @@ const AdminSalesHistory = () => {
                         >
                             <option value="all">All Branches</option>
                             {branches.map(b => (
-                                <option key={b.key} value={b.id}>{b.name}</option>
+                                <option key={b.id} value={b.id}>{b.name}</option>
                             ))}
                         </select>
                     </div>

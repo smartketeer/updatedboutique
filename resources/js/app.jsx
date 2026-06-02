@@ -13,6 +13,7 @@ import CashierHistory from './views/CashierHistory';
 import CashierInventoryManagement from './views/CashierInventoryManagement';
 import CashierAccounts from './views/CashierAccounts';
 import StockManagement from './views/StockManagement';
+import AdminVoidHistory from './views/AdminVoidHistory';
 import Settings from './views/Settings';
 import Branches from './views/Branches';
 import StyleGuide from './views/StyleGuide';
@@ -97,6 +98,7 @@ const App = () => {
                         <Route path="settings" element={<Settings />} />
                         <Route path="branches" element={<Branches />} />
                         <Route path="reports" element={<Reports />} />
+                        <Route path="voids" element={<AdminVoidHistory />} />
                         <Route path="style-guide" element={<StyleGuide />} />
                     </Route>
 

@@ -19,7 +19,11 @@ const AdminVoidHistory = () => {
             if (q.trim()) params.set('q', q.trim());
             
             const res = await axios.get(`/api/sales?${params.toString()}`);
-            setSales(res.data);
+            // Failsafe: only keep genuinely voided sales in case the backend hasn't updated its cache yet
+            const trulyVoided = Array.isArray(res.data) 
+                ? res.data.filter(s => s.status === 'voided') 
+                : [];
+            setSales(trulyVoided);
         } catch (err) {
             console.error('Failed to fetch voided sales', err);
         } finally {

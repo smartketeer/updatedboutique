@@ -39,41 +39,65 @@ const Branches = () => {
                         </div>
                     </div>
 
-                    <ul className="space-y-6">
-                        <li className="flex items-start gap-4">
-                            <div className="mt-1.5 flex-shrink-0 w-6 flex justify-center">
+                    <ul className="space-y-4">
+                        <li className="flex items-center gap-4">
+                            <div className="flex-shrink-0 w-6 flex justify-center">
                                 <div className="w-2 h-2 rounded-full bg-[#E4E4E7]"></div>
                             </div>
-                            <div>
+                            <div className="flex items-center gap-2">
                                 <h3 className="text-[15px] font-bold text-[#18181b]">Total Capital Cost</h3>
-                                <p className="text-[13px] text-[#71717A] mt-1 leading-relaxed">Track the raw investment value of all items inside the Bodega.</p>
+                                <div className="group relative flex items-center">
+                                    <div className="w-4 h-4 rounded-full bg-[#f4f4f5] text-[#a6a6a6] flex items-center justify-center text-[10px] font-bold cursor-help border border-[#e4e4e7] hover:bg-[#e4e4e7] hover:text-[#818181] transition-colors">?</div>
+                                    <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block w-64 p-3 bg-[#18181b] text-white text-[12px] font-medium leading-relaxed rounded-xl shadow-lg z-50">
+                                        Track the raw investment value of all items inside the Bodega.
+                                        <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-[#18181b]"></div>
+                                    </div>
+                                </div>
                             </div>
                         </li>
-                        <li className="flex items-start gap-4">
-                            <div className="mt-1.5 flex-shrink-0 w-6 flex justify-center">
+                        <li className="flex items-center gap-4">
+                            <div className="flex-shrink-0 w-6 flex justify-center">
                                 <div className="w-2 h-2 rounded-full bg-[#E4E4E7]"></div>
                             </div>
-                            <div>
+                            <div className="flex items-center gap-2">
                                 <h3 className="text-[15px] font-bold text-[#18181b]">Total Estimated Value</h3>
-                                <p className="text-[13px] text-[#71717A] mt-1 leading-relaxed">Forecasted revenue based on current selling prices.</p>
+                                <div className="group relative flex items-center">
+                                    <div className="w-4 h-4 rounded-full bg-[#f4f4f5] text-[#a6a6a6] flex items-center justify-center text-[10px] font-bold cursor-help border border-[#e4e4e7] hover:bg-[#e4e4e7] hover:text-[#818181] transition-colors">?</div>
+                                    <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block w-64 p-3 bg-[#18181b] text-white text-[12px] font-medium leading-relaxed rounded-xl shadow-lg z-50">
+                                        Forecasted revenue based on current selling prices.
+                                        <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-[#18181b]"></div>
+                                    </div>
+                                </div>
                             </div>
                         </li>
-                        <li className="flex items-start gap-4">
-                            <div className="mt-1.5 flex-shrink-0 w-6 flex justify-center">
+                        <li className="flex items-center gap-4">
+                            <div className="flex-shrink-0 w-6 flex justify-center">
                                 <div className="w-2 h-2 rounded-full bg-[#E4E4E7]"></div>
                             </div>
-                            <div>
+                            <div className="flex items-center gap-2">
                                 <h3 className="text-[15px] font-bold text-[#18181b]">Pending Branch Requests</h3>
-                                <p className="text-[13px] text-[#71717A] mt-1 leading-relaxed">Quick overview of how many items are awaiting transfer approval to branches.</p>
+                                <div className="group relative flex items-center">
+                                    <div className="w-4 h-4 rounded-full bg-[#f4f4f5] text-[#a6a6a6] flex items-center justify-center text-[10px] font-bold cursor-help border border-[#e4e4e7] hover:bg-[#e4e4e7] hover:text-[#818181] transition-colors">?</div>
+                                    <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block w-64 p-3 bg-[#18181b] text-white text-[12px] font-medium leading-relaxed rounded-xl shadow-lg z-50">
+                                        Quick overview of how many items are awaiting transfer approval to branches.
+                                        <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-[#18181b]"></div>
+                                    </div>
+                                </div>
                             </div>
                         </li>
-                        <li className="flex items-start gap-4">
-                            <div className="mt-1.5 flex-shrink-0 w-6 flex justify-center">
+                        <li className="flex items-center gap-4">
+                            <div className="flex-shrink-0 w-6 flex justify-center">
                                 <div className="w-2 h-2 rounded-full bg-[#E4E4E7]"></div>
                             </div>
-                            <div>
+                            <div className="flex items-center gap-2">
                                 <h3 className="text-[15px] font-bold text-[#18181b]">Dead Stocks</h3>
-                                <p className="text-[13px] text-[#71717A] mt-1 leading-relaxed">Identify items in the Bodega that haven't been transferred or moved in a long time.</p>
+                                <div className="group relative flex items-center">
+                                    <div className="w-4 h-4 rounded-full bg-[#f4f4f5] text-[#a6a6a6] flex items-center justify-center text-[10px] font-bold cursor-help border border-[#e4e4e7] hover:bg-[#e4e4e7] hover:text-[#818181] transition-colors">?</div>
+                                    <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block w-64 p-3 bg-[#18181b] text-white text-[12px] font-medium leading-relaxed rounded-xl shadow-lg z-50">
+                                        Identify items in the Bodega that haven't been transferred or moved in a long time.
+                                        <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-[#18181b]"></div>
+                                    </div>
+                                </div>
                             </div>
                         </li>
                     </ul>
@@ -92,17 +116,44 @@ const Branches = () => {
                     </div>
 
                     <ul className="space-y-4">
-                        <li className="flex items-center gap-4 p-4 rounded-2xl bg-[#F8F8F8]">
-                            <ArrowRightLeft size={18} className="text-[#18181b]" strokeWidth={2.5} />
-                            <span className="text-[15px] font-bold text-[#18181b]">Transfer Outbound</span>
+                        <li className="flex items-center gap-4 p-4 rounded-2xl bg-[#F8F8F8] justify-between">
+                            <div className="flex items-center gap-4">
+                                <ArrowRightLeft size={18} className="text-[#18181b]" strokeWidth={2.5} />
+                                <span className="text-[15px] font-bold text-[#18181b]">Transfer Outbound</span>
+                            </div>
+                            <div className="group relative flex items-center">
+                                <div className="w-4 h-4 rounded-full bg-white text-[#a6a6a6] flex items-center justify-center text-[10px] font-bold cursor-help border border-[#e4e4e7] hover:bg-[#e4e4e7] hover:text-[#818181] transition-colors">?</div>
+                                <div className="absolute right-0 bottom-full mb-2 hidden group-hover:block w-64 p-3 bg-[#18181b] text-white text-[12px] font-medium leading-relaxed rounded-xl shadow-lg z-50">
+                                    Initiate transfers of stock from the Bodega to specific branches.
+                                    <div className="absolute right-1 bottom-[-6px] w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-[#18181b]"></div>
+                                </div>
+                            </div>
                         </li>
-                        <li className="flex items-center gap-4 p-4 rounded-2xl bg-[#F8F8F8]">
-                            <Clock size={18} className="text-[#18181b]" strokeWidth={2.5} />
-                            <span className="text-[15px] font-bold text-[#18181b]">Transfer History</span>
+                        <li className="flex items-center gap-4 p-4 rounded-2xl bg-[#F8F8F8] justify-between">
+                            <div className="flex items-center gap-4">
+                                <Clock size={18} className="text-[#18181b]" strokeWidth={2.5} />
+                                <span className="text-[15px] font-bold text-[#18181b]">Transfer History</span>
+                            </div>
+                            <div className="group relative flex items-center">
+                                <div className="w-4 h-4 rounded-full bg-white text-[#a6a6a6] flex items-center justify-center text-[10px] font-bold cursor-help border border-[#e4e4e7] hover:bg-[#e4e4e7] hover:text-[#818181] transition-colors">?</div>
+                                <div className="absolute right-0 bottom-full mb-2 hidden group-hover:block w-64 p-3 bg-[#18181b] text-white text-[12px] font-medium leading-relaxed rounded-xl shadow-lg z-50">
+                                    Review logs of all past stock movements and delivery status.
+                                    <div className="absolute right-1 bottom-[-6px] w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-[#18181b]"></div>
+                                </div>
+                            </div>
                         </li>
-                        <li className="flex items-center gap-4 p-4 rounded-2xl bg-[#F8F8F8]">
-                            <FileText size={18} className="text-[#18181b]" strokeWidth={2.5} />
-                            <span className="text-[15px] font-bold text-[#18181b]">Branch Requisition</span>
+                        <li className="flex items-center gap-4 p-4 rounded-2xl bg-[#F8F8F8] justify-between">
+                            <div className="flex items-center gap-4">
+                                <FileText size={18} className="text-[#18181b]" strokeWidth={2.5} />
+                                <span className="text-[15px] font-bold text-[#18181b]">Branch Requisition</span>
+                            </div>
+                            <div className="group relative flex items-center">
+                                <div className="w-4 h-4 rounded-full bg-white text-[#a6a6a6] flex items-center justify-center text-[10px] font-bold cursor-help border border-[#e4e4e7] hover:bg-[#e4e4e7] hover:text-[#818181] transition-colors">?</div>
+                                <div className="absolute right-0 bottom-full mb-2 hidden group-hover:block w-64 p-3 bg-[#18181b] text-white text-[12px] font-medium leading-relaxed rounded-xl shadow-lg z-50">
+                                    Review and approve stock requests initiated by branch staff.
+                                    <div className="absolute right-1 bottom-[-6px] w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-[#18181b]"></div>
+                                </div>
+                            </div>
                         </li>
                     </ul>
                 </div>

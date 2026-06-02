@@ -32,6 +32,11 @@ class ActivityLogController extends Controller
             });
         }
 
+        if ($exclude = request()->query('exclude_events')) {
+            $excludeArray = explode(',', $exclude);
+            $query->whereNotIn('event_type', $excludeArray);
+        }
+
         return response()->json($query->limit($limit)->get());
     }
 }

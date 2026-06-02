@@ -9,10 +9,12 @@ const PESO = '\u20B1';
 
 const CashierHistory = () => {
     const [sales, setSales] = React.useState([]);
+    const [pagination, setPagination] = React.useState(null);
     const [loading, setLoading] = React.useState(true);
     const [date, setDate] = React.useState(() => new Date().toISOString().slice(0, 10));
     const [paymentMethod, setPaymentMethod] = React.useState('all');
     const [q, setQ] = React.useState('');
+    const [page, setPage] = React.useState(1);
     const [voidingSaleId, setVoidingSaleId] = React.useState(null);
     const [voidReason, setVoidReason] = React.useState('');
     const [voidLoading, setVoidLoading] = React.useState(false);
@@ -30,13 +32,24 @@ const CashierHistory = () => {
             if (date) params.set('date', date);
             if (paymentMethod !== 'all') params.set('payment_method', paymentMethod);
             if (q.trim()) params.set('q', q.trim());
+            params.set('page', page);
             const res = await axios.get(`/api/sales?${params.toString()}`);
-            setSales(res.data);
+            setSales(res.data.data || []);
+            setPagination({
+                current_page: res.data.current_page,
+                last_page: res.data.last_page,
+                total: res.data.total
+            });
         } catch (err) {
             console.error('Failed to fetch sales', err);
         } finally {
             setLoading(false);
         }
+    }, [date, paymentMethod, q, page]);
+
+    React.useEffect(() => {
+        // Reset to page 1 when filters change
+        setPage(1);
     }, [date, paymentMethod, q]);
 
     React.useEffect(() => {
@@ -196,6 +209,31 @@ const CashierHistory = () => {
                                 })}
                             </tbody>
                         </table>
+                    </div>
+                )}
+                
+                {/* Pagination Controls */}
+                {!loading && pagination && pagination.last_page > 1 && (
+                    <div className="px-6 py-4 border-t border-[#19140015] flex items-center justify-between bg-[#F8F6F3]/50">
+                        <span className="text-sm text-[#a6a6a6] font-medium">
+                            Showing page {pagination.current_page} of {pagination.last_page} ({pagination.total} total)
+                        </span>
+                        <div className="flex gap-2">
+                            <button 
+                                onClick={() => setPage(p => Math.max(1, p - 1))} 
+                                disabled={pagination.current_page === 1}
+                                className="px-3 py-1.5 text-sm font-semibold border border-[#19140035] rounded-lg hover:bg-[#dddddd] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                                Previous
+                            </button>
+                            <button 
+                                onClick={() => setPage(p => Math.min(pagination.last_page, p + 1))} 
+                                disabled={pagination.current_page === pagination.last_page}
+                                className="px-3 py-1.5 text-sm font-semibold border border-[#19140035] rounded-lg hover:bg-[#dddddd] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                                Next
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>

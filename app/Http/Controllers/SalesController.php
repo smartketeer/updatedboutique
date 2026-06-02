@@ -453,7 +453,8 @@ class SalesController extends Controller
             });
         }
 
-        $sales = $query->get();
+        $paginator = $query->paginate(25);
+        $sales = $paginator->getCollection();
         
         $saleIds = $sales->pluck('id');
         $logs = ActivityLog::where('event_type', 'sale_completed')
@@ -469,7 +470,9 @@ class SalesController extends Controller
             return $sale;
         });
 
-        return response()->json($sales);
+        $paginator->setCollection($sales);
+
+        return response()->json($paginator);
     }
 
     private function verifyPinOrFail(User $user, string $pin): void

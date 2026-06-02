@@ -46,6 +46,15 @@ class AuthController extends Controller
                 'ip'   => $request->ip(),
             ]);
 
+            \App\Models\ActivityLog::create([
+                'actor_user_id' => $user->id,
+                'event_type'    => 'auth_login',
+                'description'   => "{$user->name} logged into the POS system.",
+                'metadata'      => ['ip' => $request->ip()],
+                'ip_address'    => $request->ip(),
+                'user_agent'    => $request->userAgent(),
+            ]);
+
             // Load branch relationships
             $user->load(['branch:id,name,is_active', 'branches:id,name,is_active']);
 
@@ -90,12 +99,22 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        $tokenId = $request->user()->currentAccessToken()->id;
+        $user = $request->user();
+        $tokenId = $user->currentAccessToken()->id;
 
         // Clear any cached active branch before revoking the token
         BranchResolver::clearActiveBranch($tokenId);
 
-        $request->user()->currentAccessToken()->delete();
+        \App\Models\ActivityLog::create([
+            'actor_user_id' => $user->id,
+            'event_type'    => 'auth_logout',
+            'description'   => "{$user->name} logged out of the POS system.",
+            'metadata'      => [],
+            'ip_address'    => $request->ip(),
+            'user_agent'    => $request->userAgent(),
+        ]);
+
+        $user->currentAccessToken()->delete();
 
         return response()->json(['message' => 'Logged out successfully']);
     }

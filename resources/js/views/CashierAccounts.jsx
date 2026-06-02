@@ -213,6 +213,8 @@ const CashierAccounts = () => {
             const params = new URLSearchParams();
             params.set('scope', activityScope);
             params.set('limit', '20');
+            // Exclude sales related events to focus mainly on inventory, login, etc
+            params.set('exclude_events', 'sale_completed,sale_void_requested,sale_void_approved');
             if (activityCashierId !== 'all') {
                 params.set('actor_user_id', String(activityCashierId));
             }

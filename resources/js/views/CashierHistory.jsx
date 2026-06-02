@@ -15,6 +15,7 @@ const CashierHistory = () => {
     const [paymentMethod, setPaymentMethod] = React.useState('all');
     const [q, setQ] = React.useState('');
     const [page, setPage] = React.useState(1);
+    const [totalRevenue, setTotalRevenue] = React.useState(0);
     const [voidingSaleId, setVoidingSaleId] = React.useState(null);
     const [voidReason, setVoidReason] = React.useState('');
     const [voidLoading, setVoidLoading] = React.useState(false);
@@ -40,6 +41,7 @@ const CashierHistory = () => {
                 last_page: res.data.last_page,
                 total: res.data.total
             });
+            setTotalRevenue(res.data.total_revenue || 0);
         } catch (err) {
             console.error('Failed to fetch sales', err);
         } finally {
@@ -74,8 +76,6 @@ const CashierHistory = () => {
             setVoidLoading(false);
         }
     };
-
-    const totalRevenue = sales.filter(s => s.status === 'completed').reduce((sum, s) => sum + Number(s.total_amount || 0), 0);
 
     return (
         <div className="space-y-6 max-w-7xl mx-auto">

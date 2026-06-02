@@ -15,6 +15,7 @@ const AdminSalesHistory = () => {
     const [paymentMethod, setPaymentMethod] = React.useState('all');
     const [q, setQ] = React.useState('');
     const [page, setPage] = React.useState(1);
+    const [totalRevenue, setTotalRevenue] = React.useState(0);
     const [branches, setBranches] = React.useState([]);
 
     React.useEffect(() => {
@@ -45,6 +46,7 @@ const AdminSalesHistory = () => {
                 last_page: res.data.last_page,
                 total: res.data.total
             });
+            setTotalRevenue(res.data.total_revenue || 0);
         } catch (err) {
             console.error('Failed to fetch sales', err);
         } finally {
@@ -64,8 +66,6 @@ const AdminSalesHistory = () => {
     const handlePrint = () => {
         window.print();
     };
-
-    const totalRevenue = sales.filter(s => s.status === 'completed').reduce((sum, s) => sum + Number(s.total_amount || 0), 0);
 
     return (
         <div className="space-y-6 max-w-[1600px] mx-auto print:m-0 print:space-y-4">

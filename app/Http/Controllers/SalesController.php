@@ -477,8 +477,10 @@ class SalesController extends Controller
         });
 
         $paginator->setCollection($sales);
+        $response = $paginator->toArray();
+        $response['total_revenue'] = (float) (clone $query)->where('status', 'completed')->sum('total_amount');
 
-        return response()->json($paginator);
+        return response()->json($response);
     }
 
     private function verifyPinOrFail(User $user, string $pin): void

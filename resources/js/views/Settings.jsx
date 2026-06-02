@@ -1,7 +1,7 @@
 import React from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, RefreshCw, Loader2, MapPin, Check } from 'lucide-react';
+import { ShieldCheck, RefreshCw, Loader2, Package, Check } from 'lucide-react';
 
 const ToggleSwitch = ({ checked, onChange, title, description, saving }) => (
     <div className="flex items-center justify-between py-5 border-b border-zinc-100 last:border-0 gap-4">
@@ -176,10 +176,13 @@ const Settings = () => {
                 <div className="px-5 py-4 sm:px-6 sm:py-5 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-white border border-[#cbcbcb] flex items-center justify-center shadow-sm text-[#818181] group-hover:bg-[#dddddd] transition-colors">
-                            <MapPin size={20} />
+                            <Package size={20} />
                         </div>
                         <div>
-                            <h2 className="text-base font-semibold text-[#818181] tracking-tight">Master Inventory (BODEGA)</h2>
+                            <div className="flex items-center gap-2">
+                                <h2 className="text-base font-semibold text-[#818181] tracking-tight">Master Inventory (BODEGA)</h2>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold bg-[#dddddd] text-[#818181] uppercase tracking-wider">Coming Soon</span>
+                            </div>
                             <p className="text-xs text-[#a6a6a6] font-medium mt-0.5">Warehouse management system.</p>
                         </div>
                     </div>

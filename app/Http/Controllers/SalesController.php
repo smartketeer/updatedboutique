@@ -331,9 +331,11 @@ class SalesController extends Controller
                 $itemLabels->push("{$ci['name']} ×{$ci['quantity']} (custom)");
             }
 
+            $refText = (string) $request->reference_number;
+            $refDisplay = $refText ? " (Ref: {$refText})" : "";
             $itemSummary = $itemLabels->join(', ');
             $total       = number_format($finalAmount, 2);
-            $description = "{$staff->name} ({$branchLabel}) sold: {$itemSummary}. Total: ₱{$total} via {$request->payment_method}.";
+            $description = "{$staff->name} ({$branchLabel}) sold: {$itemSummary}. Total: ₱{$total} via {$request->payment_method}{$refDisplay}.";
 
             ActivityLog::create([
                 'actor_user_id' => $staff->id,
@@ -347,6 +349,7 @@ class SalesController extends Controller
                     'custom_items'   => collect($customItemsToCreate)->pluck('name')->all(),
                     'total_amount'   => $finalAmount,
                     'payment_method' => $request->payment_method,
+                    'reference_number' => $refText,
                 ],
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),

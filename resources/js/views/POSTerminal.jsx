@@ -312,6 +312,8 @@ const POSTerminal = () => {
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState('cash');
     const [stockNotice, setStockNotice] = useState('');
+    const [isGcashModalOpen, setIsGcashModalOpen] = useState(false);
+    const [gcashReference, setGcashReference] = useState('');
     const [mockupOverlayUrl, setMockupOverlayUrl] = useState('');
     const [mockupOpacity, setMockupOpacity] = useState(0.55);
     const [stockById, setStockById] = useState({});
@@ -659,7 +661,7 @@ const POSTerminal = () => {
 
     const filteredItems = items;
 
-    const handleCheckout = async (method) => {
+    const handleCheckout = async (method, referenceNumber = '') => {
         if (cartItems.length === 0) return;
         if (!posSettings.dailySalesEnabled) {
             setDailySalesModalOpen(true);
@@ -679,6 +681,10 @@ const POSTerminal = () => {
         }
         if (requiresOverride && (!isApprovalValid || !checkoutPin)) {
             alert('Manager approval is required for price adjustments or custom items.');
+            return;
+        }
+        if (method === 'gcash' && (!referenceNumber || !/^\d{4}$/.test(referenceNumber))) {
+            setIsGcashModalOpen(true);
             return;
         }
         try {
@@ -702,6 +708,7 @@ const POSTerminal = () => {
                     reason: i.custom_reason || null,
                 })),
                 payment_method: method,
+                reference_number: referenceNumber,
                 discount: discount,
                 cashier_pin: requiresOverride ? checkoutPin : null,
                 override_approval_token: requiresOverride ? overrideApproval?.token : null,
@@ -717,6 +724,7 @@ const POSTerminal = () => {
             clearCart();
             setCustomerType('walk_in');
             setDiscount(0);
+            setGcashReference('');
             setIsCartOpen(false);
             clearOverrideAuth();
             try {
@@ -1299,6 +1307,50 @@ const POSTerminal = () => {
                                         clearOverrideAuth={clearOverrideAuth}
                                         formatAmount={formatAmount}
                                     />
+                                </Dialog.Panel>
+                            </Transition.Child>
+                        </div>
+                    </div>
+                </Dialog>
+            </Transition>
+
+            {/* GCash Reference Modal */}
+            <Transition appear show={isGcashModalOpen} as={Fragment}>
+                <Dialog as="div" className="relative z-[100]" onClose={() => setIsGcashModalOpen(false)}>
+                    <Transition.Child as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-200" leaveFrom="opacity-100" leaveTo="opacity-0">
+                        <button type="button" className="fixed inset-0 bg-[#818181]/40 backdrop-blur-md" onClick={() => setIsGcashModalOpen(false)} aria-label="Close GCash modal" />
+                    </Transition.Child>
+                    <div className="fixed inset-0 overflow-y-auto">
+                        <div className="flex min-h-full items-center justify-center p-4">
+                            <Transition.Child as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0 scale-95" enterTo="opacity-100 scale-100" leave="ease-in duration-200" leaveFrom="opacity-100 scale-100" leaveTo="opacity-0 scale-95">
+                                <Dialog.Panel className="w-full max-w-sm transform overflow-hidden rounded-3xl bg-white p-6 shadow-2xl transition-all border border-zinc-100">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <Dialog.Title as="h3" className="text-xl font-semibold text-[#818181] tracking-tight">GCash Reference</Dialog.Title>
+                                        <button onClick={() => setIsGcashModalOpen(false)} className="p-2 hover:bg-[#dddddd] rounded-full transition-colors text-[#a6a6a6]"><X size={20} /></button>
+                                    </div>
+                                    <p className="text-sm text-[#a6a6a6] mb-4">Please enter the last 4 digits of the GCash reference number to proceed.</p>
+                                    <div className="space-y-4">
+                                        <input
+                                            type="text"
+                                            maxLength={4}
+                                            placeholder="e.g. 1234"
+                                            value={gcashReference}
+                                            onChange={(e) => setGcashReference(e.target.value.replace(/\D/g, ''))}
+                                            className="w-full px-4 py-3 text-center text-2xl font-bold tracking-[0.5em] text-[#818181] border border-[#cbcbcb] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#007DFE]/50 focus:border-[#007DFE] bg-white transition-colors"
+                                        />
+                                        <button 
+                                            onClick={() => {
+                                                if (gcashReference.length === 4) {
+                                                    setIsGcashModalOpen(false);
+                                                    handleCheckout('gcash', gcashReference);
+                                                }
+                                            }}
+                                            disabled={gcashReference.length !== 4}
+                                            className="w-full py-3 bg-[#007DFE] text-white rounded-xl font-semibold text-sm uppercase tracking-wider hover:bg-[#0069cc] transition-all disabled:opacity-50 disabled:hover:bg-[#007DFE]"
+                                        >
+                                            Submit & Pay
+                                        </button>
+                                    </div>
                                 </Dialog.Panel>
                             </Transition.Child>
                         </div>

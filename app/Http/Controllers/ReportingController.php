@@ -12,29 +12,54 @@ use Illuminate\Support\Facades\Schema;
 
 class ReportingController extends Controller
 {
-    public function dailySummary(Request $request)
+    public function dailySummary()
     {
         $today = Carbon::today();
-        $base = Sale::query()
+        $sales = Sale::query()
             ->where('status', 'completed')
-            ->whereDate('created_at', $today);
+            ->whereDate('created_at', $today)
+            ->get();
+            
+        $totalSales = $sales->sum('total_amount');
+        $totalCount = $sales->count();
+        $totalDiscount = $sales->sum('discount');
 
-        // Optional: filter by branch (via the staff's branch_id)
-        if ($branchId = $request->query('branch_id')) {
-            $base->whereHas('staff', function ($q) use ($branchId) {
-                $q->where('branch_id', (int) $branchId);
+        $saleIds = $sales->pluck('id');
+        $logs = \App\Models\ActivityLog::where('event_type', 'sale_completed')
+            ->whereIn('metadata->sale_id', $saleIds)
+            ->get()
+            ->keyBy(function ($log) {
+                return $log->metadata['sale_id'] ?? null;
             });
+            
+        $branches = \App\Models\Branch::all()->keyBy('id');
+        $branchSummaries = [];
+        foreach($branches as $b) {
+            $branchSummaries[$b->id] = [
+                'id' => $b->id,
+                'name' => $b->name,
+                'total_revenue' => 0,
+                'total_transactions' => 0,
+            ];
         }
-
-        $totalSales = (clone $base)->sum('total_amount');
-        $totalCount = (clone $base)->count();
-        $totalDiscount = (clone $base)->sum('discount');
+        
+        foreach($sales as $sale) {
+            $log = $logs->get($sale->id);
+            if ($log && isset($log->metadata['branch_id'])) {
+                $bId = $log->metadata['branch_id'];
+                if (isset($branchSummaries[$bId])) {
+                    $branchSummaries[$bId]['total_revenue'] += $sale->total_amount;
+                    $branchSummaries[$bId]['total_transactions'] += 1;
+                }
+            }
+        }
 
         return response()->json([
             'date' => $today->toDateString(),
             'total_revenue' => $totalSales,
             'total_transactions' => $totalCount,
             'total_discount' => $totalDiscount,
+            'branches' => array_values($branchSummaries),
         ]);
     }
 

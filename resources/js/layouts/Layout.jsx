@@ -19,6 +19,7 @@ import {
     ChevronDown,
     ArrowLeftRight,
     Ban,
+    Receipt,
 } from 'lucide-react';
 
 const LiveClock = () => {
@@ -156,6 +157,7 @@ const Layout = () => {
                   { icon: Package, label: 'Inventory', path: `${base}/inventory` },
                   { icon: ArrowLeftRight, label: 'Stock Management', path: `${base}/stock-management` },
                   { icon: BarChart, label: 'Reports', path: `${base}/reports` },
+                  { icon: Receipt, label: 'Sales', path: `${base}/sales` },
                   { icon: Ban, label: 'Void History', path: `${base}/voids` },
                   { icon: Users, label: 'Cashiers', path: `${base}/cashiers` },
                   { icon: Settings, label: 'Settings', path: `${base}/settings` },

@@ -12,11 +12,14 @@ const ARROW = '\u2192';
 const Dashboard = () => {
     const navigate = useNavigate();
     const { user } = useAuthStore();
-    const [revenueBranchIndex, setRevenueBranchIndex] = useState(0);
-    const [txBranchIndex, setTxBranchIndex] = useState(0);
-    const [branchesList, setBranchesList] = useState([]);
-    const [branchStats, setBranchStats] = useState({});
-    const [stats, setStats] = useState({ revenue: 0, transactions: 0, lowStockCount: 0, valuationBranches: [] });
+    const [stats, setStats] = useState({
+        revenue: 0,
+        transactions: 0,
+        summaryBranches: [],
+        lowStockCount: 0,
+        valuationBranches: [],
+    });
+    const [activeSummaryIndex, setActiveSummaryIndex] = useState(0);
     const [activeValuationIndex, setActiveValuationIndex] = useState(0);
     const [loading, setLoading] = useState(true);
     const [recentActivity, setRecentActivity] = useState([]);
@@ -27,43 +30,22 @@ const Dashboard = () => {
     const [inventoryRequestsError, setInventoryRequestsError] = useState('');
     const [inventoryRequestsLoading, setInventoryRequestsLoading] = useState(false);
     const [inventoryRequestAlert, setInventoryRequestAlert] = useState('');
-    const [activeTab, setActiveTab] = useState('activity');
+    const [activeTab, setActiveTab] = useState('activity'); // 'activity' | 'stock'
 
     useEffect(() => {
         const fetchStats = async () => {
             try {
                 const isStaff = user?.role === 'staff';
-                const [branchesRes, lowStockRes, valRes] = await Promise.all([
-                    isStaff ? Promise.resolve({ data: [] }) : axios.get('/api/branches'),
+                const requests = [
+                    isStaff ? Promise.resolve({ data: { total_revenue: 0, total_transactions: 0 } }) : axios.get('/api/reports/daily-summary'),
                     axios.get('/api/inventory/low-stock'),
                     isStaff ? Promise.resolve({ data: { branches: [] } }) : axios.get('/api/reports/inventory-valuation'),
-                ]);
-
-                const bList = Array.isArray(branchesRes.data) ? branchesRes.data.filter(b => b.is_active) : [];
-                setBranchesList(bList);
-
-                // Fetch daily summary for ALL + each branch in parallel
-                if (!isStaff && bList.length > 0) {
-                    const summaryRequests = [
-                        axios.get('/api/reports/daily-summary'), // all
-                        ...bList.map(b => axios.get(`/api/reports/daily-summary?branch_id=${b.id}`)),
-                    ];
-                    const summaryResults = await Promise.all(summaryRequests);
-
-                    const statsMap = {};
-                    statsMap['all'] = { rev: summaryResults[0].data.total_revenue || 0, tx: summaryResults[0].data.total_transactions || 0 };
-                    bList.forEach((b, i) => {
-                        statsMap[String(b.id)] = { rev: summaryResults[i + 1].data.total_revenue || 0, tx: summaryResults[i + 1].data.total_transactions || 0 };
-                    });
-                    setBranchStats(statsMap);
-                } else if (!isStaff) {
-                    const dailyRes = await axios.get('/api/reports/daily-summary');
-                    setBranchStats({ 'all': { rev: dailyRes.data.total_revenue || 0, tx: dailyRes.data.total_transactions || 0 } });
-                }
-
+                ];
+                const [dailyRes, lowStockRes, valRes] = await Promise.all(requests);
                 setStats({
-                    revenue: 0,
-                    transactions: 0,
+                    revenue: dailyRes.data.total_revenue || 0,
+                    transactions: dailyRes.data.total_transactions || 0,
+                    summaryBranches: dailyRes.data.branches || [],
                     lowStockCount: lowStockRes.data.length || 0,
                     valuationBranches: valRes.data.branches || [],
                 });
@@ -114,6 +96,7 @@ const Dashboard = () => {
         if (user?.role !== 'admin') return;
         let cancelled = false;
         const seen = new Set();
+
         const fetchRequests = async () => {
             if (cancelled) return;
             setInventoryRequestsLoading(true);
@@ -141,9 +124,13 @@ const Dashboard = () => {
                 if (!cancelled) setInventoryRequestsLoading(false);
             }
         };
+
         fetchRequests();
         const id = window.setInterval(fetchRequests, 5000);
-        return () => { cancelled = true; window.clearInterval(id); };
+        return () => {
+            cancelled = true;
+            window.clearInterval(id);
+        };
     }, [user]);
 
     const approveInventoryRequest = async (requestId) => {
@@ -157,8 +144,9 @@ const Dashboard = () => {
         }
     };
 
-    const valBranches = stats.valuationBranches || [];
-    const activeBranch = valBranches.length > 0 ? valBranches[activeValuationIndex % valBranches.length] : null;
+    const branches = stats.valuationBranches || [];
+    const activeBranch = branches.length > 0 ? branches[activeValuationIndex % branches.length] : null;
+
     const valuationCard = activeBranch ? {
         title: `${activeBranch.name} Est. Retail Value`,
         value: `${PESO}${activeBranch.estimated_value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
@@ -166,43 +154,43 @@ const Dashboard = () => {
         color: 'text-[#d94a79]',
         bg: 'bg-[#d94a79]/10',
         blob: 'bg-[#d94a79]/20',
-        onClick: () => setActiveValuationIndex((prev) => (prev + 1) % valBranches.length),
-        interactiveText: valBranches.length > 1 ? 'Tap to Switch' : undefined,
+        onClick: () => setActiveValuationIndex((prev) => (prev + 1) % branches.length),
+        interactiveText: branches.length > 1 ? 'Tap to Switch' : undefined,
     } : null;
 
-    const branchOptions = ['All Branches', ...branchesList.map(b => b.name)];
-    const branchKeys = ['all', ...branchesList.map(b => String(b.id))];
-
-    const currentRevenueKey = branchKeys[revenueBranchIndex % branchKeys.length] || 'all';
-    const currentTxKey = branchKeys[txBranchIndex % branchKeys.length] || 'all';
-
-    const currentRevenue = branchStats[currentRevenueKey]?.rev || 0;
-    const currentTx = branchStats[currentTxKey]?.tx || 0;
-    const revenueBranchLabel = branchOptions[revenueBranchIndex % branchOptions.length] || 'All Branches';
-    const txBranchLabel = branchOptions[txBranchIndex % branchOptions.length] || 'All Branches';
+    const summaryOptions = [
+        { name: 'Overall', revenue: stats.revenue, transactions: stats.transactions },
+        ...(stats.summaryBranches || []).map(b => ({
+            name: b.name,
+            revenue: b.total_revenue,
+            transactions: b.total_transactions
+        }))
+    ];
+    
+    const activeSummary = summaryOptions.length > 0 ? summaryOptions[activeSummaryIndex % summaryOptions.length] : { name: 'Overall', revenue: 0, transactions: 0 };
 
     const cards = [
         ...(user?.role === 'admin'
             ? [
                   {
-                      title: "Today's Revenue",
-                      value: `${PESO}${currentRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                      title: `${activeSummary.name} Revenue`,
+                      value: `${PESO}${activeSummary.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
                       icon: TrendingUp,
                       color: 'text-[#818181]',
                       bg: 'bg-[#dddddd]',
                       blob: 'bg-[#dddddd]/10',
-                      onClick: branchKeys.length > 1 ? () => setRevenueBranchIndex(prev => (prev + 1) % branchKeys.length) : undefined,
-                      interactiveText: branchKeys.length > 1 ? revenueBranchLabel : undefined,
+                      onClick: () => setActiveSummaryIndex((prev) => (prev + 1) % summaryOptions.length),
+                      interactiveText: summaryOptions.length > 1 ? 'Tap to Switch' : undefined,
                   },
                   {
-                      title: 'Total Transactions',
-                      value: currentTx,
+                      title: `${activeSummary.name} Transactions`,
+                      value: activeSummary.transactions,
                       icon: Activity,
                       color: 'text-emerald-600',
                       bg: 'bg-emerald-50',
                       blob: 'bg-emerald-500/10',
-                      onClick: branchKeys.length > 1 ? () => setTxBranchIndex(prev => (prev + 1) % branchKeys.length) : undefined,
-                      interactiveText: branchKeys.length > 1 ? txBranchLabel : undefined,
+                      onClick: () => setActiveSummaryIndex((prev) => (prev + 1) % summaryOptions.length),
+                      interactiveText: summaryOptions.length > 1 ? 'Tap to Switch' : undefined,
                   },
                   ...(valuationCard ? [valuationCard] : []),
               ]

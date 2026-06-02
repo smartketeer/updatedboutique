@@ -406,6 +406,13 @@ class SalesController extends Controller
             $query->where('staff_id', $user->id);
         }
 
+        if ($branchId = request()->query('branch_id')) {
+            $saleIds = ActivityLog::where('event_type', 'sale_completed')
+                ->where('metadata->branch_id', (int) $branchId)
+                ->pluck('metadata->sale_id');
+            $query->whereIn('id', $saleIds);
+        }
+
         if ($date = request()->query('date')) {
             $query->whereDate('created_at', $date);
         }

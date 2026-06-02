@@ -12,12 +12,19 @@ use Illuminate\Support\Facades\Schema;
 
 class ReportingController extends Controller
 {
-    public function dailySummary()
+    public function dailySummary(Request $request)
     {
         $today = Carbon::today();
         $base = Sale::query()
             ->where('status', 'completed')
             ->whereDate('created_at', $today);
+
+        // Optional: filter by branch (via the staff's branch_id)
+        if ($branchId = $request->query('branch_id')) {
+            $base->whereHas('staff', function ($q) use ($branchId) {
+                $q->where('branch_id', (int) $branchId);
+            });
+        }
 
         $totalSales = (clone $base)->sum('total_amount');
         $totalCount = (clone $base)->count();

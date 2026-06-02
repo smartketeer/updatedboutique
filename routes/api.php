@@ -117,5 +117,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/reports/yearly-revenue', [ReportingController::class, 'yearlyRevenue']);
         Route::get('/reports/staff-performance', [ReportingController::class, 'staffPerformance']);
         Route::get('/reports/inventory-valuation', [ReportingController::class, 'inventoryValuation']);
+
+        // Sales Void Reason
+        Route::get('/sales/{sale}/void-reason', [SalesController::class, 'getVoidReason']);
     });
 });

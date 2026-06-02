@@ -422,6 +422,10 @@ class SalesController extends Controller
             $query->where('payment_method', $payment);
         }
 
+        if ($status = request()->query('status')) {
+            $query->where('status', $status);
+        }
+
         if ($q = request()->query('q')) {
             $query->where(function ($inner) use ($q, $hasCustomerType) {
                 $inner
@@ -670,5 +674,19 @@ class SalesController extends Controller
                 'message' => 'Transaction voided successfully. Stock has been returned.',
             ], 200);
         });
+    }
+
+    public function getVoidReason(Sale $sale)
+    {
+        $log = ActivityLog::where('event_type', 'sale_voided')
+            ->where('metadata->sale_id', $sale->id)
+            ->first();
+
+        $reason = 'No reason found in activity logs.';
+        if ($log && isset($log->metadata['reason'])) {
+            $reason = $log->metadata['reason'];
+        }
+
+        return response()->json(['reason' => $reason]);
     }
 }

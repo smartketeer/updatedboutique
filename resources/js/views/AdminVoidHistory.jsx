@@ -9,6 +9,23 @@ const AdminVoidHistory = () => {
     const [loading, setLoading] = React.useState(true);
     const [date, setDate] = React.useState('');
     const [q, setQ] = React.useState('');
+    const [viewReasonSaleId, setViewReasonSaleId] = React.useState(null);
+    const [viewReasonText, setViewReasonText] = React.useState('');
+    const [reasonLoading, setReasonLoading] = React.useState(false);
+
+    const handleViewReason = async (saleId) => {
+        setViewReasonSaleId(saleId);
+        setReasonLoading(true);
+        setViewReasonText('');
+        try {
+            const res = await axios.get(`/api/sales/${saleId}/void-reason`);
+            setViewReasonText(res.data.reason || 'No reason found.');
+        } catch (err) {
+            setViewReasonText('Failed to load reason.');
+        } finally {
+            setReasonLoading(false);
+        }
+    };
 
     const fetchVoidedSales = React.useCallback(async () => {
         setLoading(true);
@@ -108,6 +125,7 @@ const AdminVoidHistory = () => {
                                     <th className="text-left px-6 py-3 font-semibold">Voided Items</th>
                                     <th className="text-right px-6 py-3 font-semibold">Original Value</th>
                                     <th className="text-center px-6 py-3 font-semibold">Status</th>
+                                    <th className="text-right px-6 py-3 font-semibold">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -134,6 +152,14 @@ const AdminVoidHistory = () => {
                                             <td className="px-6 py-3 text-center">
                                                 <span className="px-2 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-md uppercase tracking-wider">Voided</span>
                                             </td>
+                                            <td className="px-6 py-3 text-right">
+                                                <button
+                                                    onClick={() => handleViewReason(sale.id)}
+                                                    className="text-xs font-semibold text-[#818181] hover:text-[#2D4F3E] underline underline-offset-2 transition-colors"
+                                                >
+                                                    View Reason
+                                                </button>
+                                            </td>
                                         </tr>
                                     );
                                 })}
@@ -142,6 +168,32 @@ const AdminVoidHistory = () => {
                     </div>
                 )}
             </div>
+
+            {/* View Reason Modal */}
+            {viewReasonSaleId && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-[#19140015]">
+                        <h3 className="text-lg font-semibold text-[#818181] mb-4">Reason for Voiding</h3>
+                        
+                        <div className="mb-6 p-4 bg-[#F8F6F3] border border-[#19140015] rounded-xl text-sm text-[#818181]">
+                            {reasonLoading ? (
+                                <span className="animate-pulse">Loading reason...</span>
+                            ) : (
+                                <span>{viewReasonText}</span>
+                            )}
+                        </div>
+
+                        <div className="flex justify-end">
+                            <button
+                                onClick={() => { setViewReasonSaleId(null); setViewReasonText(''); }}
+                                className="px-5 py-2 text-sm font-semibold text-white bg-[#818181] hover:bg-[#a6a6a6] rounded-lg shadow-sm transition-colors"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -40,14 +40,43 @@ const ActivityDetailsModal = ({ open, onClose, activity }) => {
                     {/* Extra context fields (branch_id, item_id, item_name, etc.) */}
                     {extraKeys.length > 0 && (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 bg-[#f8f9fa] p-3 rounded-xl border border-[#cbcbcb]">
-                            {extraKeys.map(k => (
-                                <div key={k} className="space-y-0.5">
+                            {extraKeys.map(k => {
+                                const v = metadata[k];
+                                return (
+                                <div key={k} className={`space-y-0.5 ${Array.isArray(v) ? 'sm:col-span-2' : ''}`}>
                                     <div className="text-[10px] font-semibold text-[#a6a6a6] uppercase tracking-wider">{k.replace(/_/g, ' ')}</div>
                                     <div className="text-xs font-semibold text-[#3f3f46] break-all">
-                                        {typeof metadata[k] === 'object' ? JSON.stringify(metadata[k]) : String(metadata[k])}
+                                        {Array.isArray(v) && v.length > 0 && typeof v[0] === 'object' ? (
+                                            <div className="mt-2 border border-[#cbcbcb] rounded-xl overflow-hidden bg-white">
+                                                <table className="w-full text-xs text-left">
+                                                    <thead className="bg-[#f1f1f1] text-[#a6a6a6] border-b border-[#cbcbcb]">
+                                                        <tr>
+                                                            {Object.keys(v[0]).map(col => (
+                                                                <th key={col} className="px-3 py-2 font-semibold uppercase">{col.replace(/_/g, ' ')}</th>
+                                                            ))}
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody className="divide-y divide-[#cbcbcb]">
+                                                        {v.map((row, i) => (
+                                                            <tr key={i} className="hover:bg-[#f9f9f9]">
+                                                                {Object.values(row).map((val, j) => (
+                                                                    <td key={j} className="px-3 py-2 text-[#818181] font-medium">{String(val)}</td>
+                                                                ))}
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        ) : typeof v === 'object' && v !== null ? (
+                                            <pre className="text-xs bg-white p-2 rounded-lg border border-[#cbcbcb] overflow-x-auto">
+                                                {JSON.stringify(v, null, 2)}
+                                            </pre>
+                                        ) : (
+                                            String(v)
+                                        )}
                                     </div>
                                 </div>
-                            ))}
+                            )})}
                         </div>
                     )}
 
@@ -100,10 +129,37 @@ const ActivityDetailsModal = ({ open, onClose, activity }) => {
                     {Object.entries(metadata)
                         .filter(([k]) => k !== 'adjustment_reason')
                         .map(([k, v]) => (
-                        <div key={k} className="space-y-1">
+                        <div key={k} className={`space-y-1 ${Array.isArray(v) ? 'sm:col-span-2' : ''}`}>
                             <div className="text-[11px] font-semibold text-[#a6a6a6] uppercase tracking-wider">{k.replace(/_/g, ' ')}</div>
                             <div className="text-sm font-semibold text-[#3f3f46] break-all">
-                                {typeof v === 'object' ? JSON.stringify(v) : String(v)}
+                                {Array.isArray(v) && v.length > 0 && typeof v[0] === 'object' ? (
+                                    <div className="mt-2 border border-[#cbcbcb] rounded-xl overflow-hidden bg-white">
+                                        <table className="w-full text-xs text-left">
+                                            <thead className="bg-[#f1f1f1] text-[#a6a6a6] border-b border-[#cbcbcb]">
+                                                <tr>
+                                                    {Object.keys(v[0]).map(col => (
+                                                        <th key={col} className="px-3 py-2 font-semibold uppercase">{col.replace(/_/g, ' ')}</th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-[#cbcbcb]">
+                                                {v.map((row, i) => (
+                                                    <tr key={i} className="hover:bg-[#f9f9f9]">
+                                                        {Object.values(row).map((val, j) => (
+                                                            <td key={j} className="px-3 py-2 text-[#818181] font-medium">{String(val)}</td>
+                                                        ))}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                ) : typeof v === 'object' && v !== null ? (
+                                    <pre className="text-xs bg-white p-2 rounded-lg border border-[#cbcbcb] overflow-x-auto">
+                                        {JSON.stringify(v, null, 2)}
+                                    </pre>
+                                ) : (
+                                    String(v)
+                                )}
                             </div>
                         </div>
                     ))}

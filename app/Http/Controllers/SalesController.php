@@ -479,6 +479,7 @@ class SalesController extends Controller
         $paginator->setCollection($sales);
         $response = $paginator->toArray();
         $response['total_revenue'] = (float) (clone $query)->where('status', 'completed')->sum('total_amount');
+        $response['total_voided_revenue'] = (float) (clone $query)->where('status', 'voided')->sum('total_amount');
 
         return response()->json($response);
     }

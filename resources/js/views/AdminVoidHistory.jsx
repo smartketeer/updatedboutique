@@ -9,6 +9,9 @@ const AdminVoidHistory = () => {
     const [loading, setLoading] = React.useState(true);
     const [date, setDate] = React.useState('');
     const [q, setQ] = React.useState('');
+    const [page, setPage] = React.useState(1);
+    const [pagination, setPagination] = React.useState(null);
+    const [totalVoidedAmount, setTotalVoidedAmount] = React.useState(0);
     const [viewReasonSaleId, setViewReasonSaleId] = React.useState(null);
     const [viewReasonText, setViewReasonText] = React.useState('');
     const [reasonLoading, setReasonLoading] = React.useState(false);
@@ -35,18 +38,32 @@ const AdminVoidHistory = () => {
             params.set('status', 'voids_and_pending'); // Fetch both voided and pending
             if (date) params.set('date', date);
             if (q.trim()) params.set('q', q.trim());
+            params.set('page', page);
             
             const res = await axios.get(`/api/sales?${params.toString()}`);
             // Failsafe: only keep genuinely voided or pending sales
-            const trulyVoided = Array.isArray(res.data) 
-                ? res.data.filter(s => s.status === 'voided' || s.status === 'pending_void') 
-                : [];
+            const dataArray = Array.isArray(res.data?.data) ? res.data.data : (Array.isArray(res.data) ? res.data : []);
+            const trulyVoided = dataArray.filter(s => s.status === 'voided' || s.status === 'pending_void');
+            
             setSales(trulyVoided);
+            setTotalVoidedAmount(res.data.total_voided_revenue || 0);
+            
+            if (res.data.current_page) {
+                setPagination({
+                    current_page: res.data.current_page,
+                    last_page: res.data.last_page,
+                    total: res.data.total
+                });
+            }
         } catch (err) {
             console.error('Failed to fetch voided sales', err);
         } finally {
             setLoading(false);
         }
+    }, [date, q, page]);
+
+    React.useEffect(() => {
+        setPage(1);
     }, [date, q]);
 
     React.useEffect(() => {
@@ -65,8 +82,6 @@ const AdminVoidHistory = () => {
             setApprovingSaleId(null);
         }
     };
-
-    const totalVoidedAmount = sales.filter(s => s.status === 'voided').reduce((sum, s) => sum + Number(s.total_amount || 0), 0);
 
     return (
         <div className="space-y-6 max-w-7xl mx-auto">
@@ -194,6 +209,31 @@ const AdminVoidHistory = () => {
                                 })}
                             </tbody>
                         </table>
+                    </div>
+                )}
+                
+                {/* Pagination Controls */}
+                {!loading && pagination && pagination.last_page > 1 && (
+                    <div className="px-6 py-4 border-t border-[#19140015] flex items-center justify-between bg-[#F8F6F3]/50">
+                        <span className="text-sm text-[#a6a6a6] font-medium">
+                            Showing page {pagination.current_page} of {pagination.last_page} ({pagination.total} total)
+                        </span>
+                        <div className="flex gap-2">
+                            <button 
+                                onClick={() => setPage(p => Math.max(1, p - 1))} 
+                                disabled={pagination.current_page === 1}
+                                className="px-3 py-1.5 text-sm font-semibold border border-[#19140035] rounded-lg hover:bg-[#dddddd] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                                Previous
+                            </button>
+                            <button 
+                                onClick={() => setPage(p => Math.min(pagination.last_page, p + 1))} 
+                                disabled={pagination.current_page === pagination.last_page}
+                                className="px-3 py-1.5 text-sm font-semibold border border-[#19140035] rounded-lg hover:bg-[#dddddd] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                                Next
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>

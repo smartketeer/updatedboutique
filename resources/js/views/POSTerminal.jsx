@@ -303,8 +303,6 @@ const POSTerminal = () => {
     
     const [customerType, setCustomerType] = useState('walk_in');
     const [discount, setDiscount] = useState(0);
-    const [isQRModalOpen, setIsQRModalOpen] = useState(false);
-    const [qrCodeUrl, setQrCodeUrl] = useState('');
     const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
     const [lastSale, setLastSale] = useState(null);
     const [skuSearch, setSkuSearch] = useState('');
@@ -715,12 +713,7 @@ const POSTerminal = () => {
             });
 
             setLastSale(res.data.sale);
-            if (method === 'gcash' && res.data.qr_code_url) {
-                setQrCodeUrl(res.data.qr_code_url);
-                setIsQRModalOpen(true);
-            } else {
-                setIsReceiptModalOpen(true);
-            }
+            setIsReceiptModalOpen(true);
             clearCart();
             setCustomerType('walk_in');
             setDiscount(0);
@@ -1349,55 +1342,6 @@ const POSTerminal = () => {
                                             className="w-full py-3 bg-[#007DFE] text-white rounded-xl font-semibold text-sm uppercase tracking-wider hover:bg-[#0069cc] transition-all disabled:opacity-50 disabled:hover:bg-[#007DFE]"
                                         >
                                             Submit & Pay
-                                        </button>
-                                    </div>
-                                </Dialog.Panel>
-                            </Transition.Child>
-                        </div>
-                    </div>
-                </Dialog>
-            </Transition>
-
-            {/* GCash QR Modal */}
-            <Transition appear show={isQRModalOpen} as={Fragment}>
-                <Dialog as="div" className="relative z-[100]" onClose={() => setIsQRModalOpen(false)}>
-                    <Transition.Child as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-200" leaveFrom="opacity-100" leaveTo="opacity-0">
-                        <button
-                            type="button"
-                            className="fixed inset-0 bg-[#818181]/40 backdrop-blur-md"
-                            onClick={() => setIsQRModalOpen(false)}
-                            aria-label="Close GCash modal"
-                        />
-                    </Transition.Child>
-                    <div className="fixed inset-0 overflow-y-auto">
-                        <div className="flex min-h-full items-center justify-center p-4">
-                            <Transition.Child as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0 scale-95" enterTo="opacity-100 scale-100" leave="ease-in duration-200" leaveFrom="opacity-100 scale-100" leaveTo="opacity-0 scale-95">
-                                <Dialog.Panel className="w-full max-w-sm transform overflow-hidden rounded-3xl bg-white p-8 shadow-2xl transition-all border border-zinc-100 text-center">
-                                    <div className="flex justify-between items-center mb-6">
-                                        <div className="text-left">
-                                            <Dialog.Title as="h3" className="text-2xl font-semibold text-[#818181] tracking-tight">GCash Payment</Dialog.Title>
-                                            <p className="text-[#a6a6a6] text-sm font-medium">Scan to pay now</p>
-                                        </div>
-                                        <button onClick={() => setIsQRModalOpen(false)} className="p-2 hover:bg-[#dddddd] rounded-full transition-colors text-[#a6a6a6]"><X size={20} /></button>
-                                    </div>
-                                    
-                                    <div className="bg-[#007DFE]/5 p-6 rounded-3xl border-2 border-dashed border-[#007DFE]/20 inline-block mb-6 shadow-sm">
-                                        <img src={qrCodeUrl} alt="GCash QR Code" className="w-48 h-48 mx-auto mix-blend-multiply" />
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <div className="bg-[#dddddd] border border-zinc-100 p-4 rounded-2xl shadow-sm">
-                                            <p className="text-[11px] font-semibold text-[#cbcbcb] uppercase tracking-widest mb-1">Total Amount</p>
-                                            <p className="text-3xl font-semibold text-[#818181] tracking-tight">{PESO}{finalTotal.toLocaleString()}</p>
-                                        </div>
-                                        <button 
-                                            onClick={() => {
-                                                setIsQRModalOpen(false);
-                                                setIsReceiptModalOpen(true);
-                                            }}
-                                            className="w-full py-4 bg-[#007DFE] text-white rounded-2xl font-semibold text-[13px] uppercase tracking-wider hover:bg-[#0069cc] transition-all shadow-lg shadow-[#007DFE20] hover:-translate-y-0.5"
-                                        >
-                                            Payment Received
                                         </button>
                                     </div>
                                 </Dialog.Panel>

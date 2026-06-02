@@ -168,7 +168,7 @@ const Settings = () => {
                 </div>
             </div>
 
-            {/* Branch Management Link */}
+            {/* Master Inventory Link */}
             <Link
                 to="/admin/branches"
                 className="mt-6 block bg-white border border-[#cbcbcb] rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden group"
@@ -179,8 +179,8 @@ const Settings = () => {
                             <MapPin size={20} />
                         </div>
                         <div>
-                            <h2 className="text-base font-semibold text-[#818181] tracking-tight">Branch Management</h2>
-                            <p className="text-xs text-[#a6a6a6] font-medium mt-0.5">Configure branch locations, status, and contact details.</p>
+                            <h2 className="text-base font-semibold text-[#818181] tracking-tight">Master Inventory (BODEGA)</h2>
+                            <p className="text-xs text-[#a6a6a6] font-medium mt-0.5">Warehouse management system.</p>
                         </div>
                     </div>
                     <span className="text-[#cbcbcb] group-hover:text-[#818181] transition-colors text-lg">&rarr;</span>

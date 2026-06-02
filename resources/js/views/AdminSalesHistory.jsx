@@ -147,6 +147,7 @@ const AdminSalesHistory = () => {
                                 <tr>
                                     <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest whitespace-nowrap">Date & Time</th>
                                     <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest">Items Sold</th>
+                                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest">Branch</th>
                                     <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest">Cashier</th>
                                     <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest whitespace-nowrap">Payment</th>
                                     <th className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-right">Price</th>
@@ -166,6 +167,9 @@ const AdminSalesHistory = () => {
                                             </td>
                                             <td className="px-4 py-3 text-sm text-[#818181] max-w-sm truncate print:max-w-none print:whitespace-normal print:text-black print:p-2" title={allItems}>
                                                 {allItems}
+                                            </td>
+                                            <td className="px-4 py-3 text-sm font-medium text-[#818181] print:text-black print:p-2">
+                                                {sale.branch_name || 'Unknown'}
                                             </td>
                                             <td className="px-4 py-3 text-sm font-medium text-[#818181] print:text-black print:p-2">
                                                 {sale.staff?.name || 'Unknown'}

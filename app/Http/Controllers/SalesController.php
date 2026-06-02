@@ -453,7 +453,23 @@ class SalesController extends Controller
             });
         }
 
-        return response()->json($query->get());
+        $sales = $query->get();
+        
+        $saleIds = $sales->pluck('id');
+        $logs = ActivityLog::where('event_type', 'sale_completed')
+            ->whereIn('metadata->sale_id', $saleIds)
+            ->get()
+            ->keyBy(function ($log) {
+                return $log->metadata['sale_id'] ?? null;
+            });
+            
+        $sales->transform(function ($sale) use ($logs) {
+            $log = $logs->get($sale->id);
+            $sale->branch_name = $log ? ($log->metadata['branch_name'] ?? 'Unknown Branch') : 'Unknown Branch';
+            return $sale;
+        });
+
+        return response()->json($sales);
     }
 
     private function verifyPinOrFail(User $user, string $pin): void

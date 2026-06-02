@@ -198,10 +198,10 @@ const AdminSalesHistory = () => {
                                             <td className="px-4 py-3 text-sm font-medium text-[#818181] print:text-black print:p-2">
                                                 {sale.staff?.name || 'Unknown'}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-[#a6a6a6] font-medium">
+                                            <td className="px-4 py-3 text-sm font-medium text-[#a6a6a6] print:text-gray-600 print:p-2">
                                                 <span className="capitalize">{sale.payment_method}</span>
                                                 {sale.payment_method === 'gcash' && sale.reference_number && (
-                                                    <span className="text-[10px] ml-1 bg-[#dddddd] px-1.5 py-0.5 rounded-md text-[#818181]">
+                                                    <span className="text-[10px] ml-1 bg-[#dddddd] px-1.5 py-0.5 rounded-md text-[#818181] print:bg-gray-100 print:text-gray-800">
                                                         {sale.reference_number}
                                                     </span>
                                                 )}

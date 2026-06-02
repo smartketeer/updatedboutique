@@ -180,7 +180,14 @@ const CashierHistory = () => {
                                             <td className="px-6 py-3 text-[#818181] max-w-xs truncate" title={allItems}>
                                                 {allItems}
                                             </td>
-                                            <td className="px-6 py-3 capitalize text-[#a6a6a6] font-medium">{sale.payment_method}</td>
+                                            <td className="px-6 py-3 text-[#a6a6a6] font-medium">
+                                                <span className="capitalize">{sale.payment_method}</span>
+                                                {sale.payment_method === 'gcash' && sale.reference_number && (
+                                                    <span className="text-[10px] ml-1 bg-[#dddddd] px-1.5 py-0.5 rounded-md text-[#818181]">
+                                                        {sale.reference_number}
+                                                    </span>
+                                                )}
+                                            </td>
                                             <td className="px-6 py-3 text-right text-[#a6a6a6]">{PESO}{Number(sale.discount || 0).toLocaleString()}</td>
                                             <td className="px-6 py-3 text-right font-medium text-[#2D4F3E]">
                                                 {PESO}{Number(sale.total_amount || 0).toLocaleString()}

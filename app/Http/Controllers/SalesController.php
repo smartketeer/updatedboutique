@@ -258,6 +258,7 @@ class SalesController extends Controller
                 'tax' => $tax,
                 'discount' => $discount,
                 'payment_method' => $request->payment_method,
+                'reference_number' => $request->reference_number,
                 'status' => 'completed',
             ];
 

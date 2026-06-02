@@ -198,8 +198,13 @@ const AdminSalesHistory = () => {
                                             <td className="px-4 py-3 text-sm font-medium text-[#818181] print:text-black print:p-2">
                                                 {sale.staff?.name || 'Unknown'}
                                             </td>
-                                            <td className="px-4 py-3 text-sm font-medium text-[#a6a6a6] capitalize print:text-gray-600 print:p-2">
-                                                {sale.payment_method}
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-[#a6a6a6] font-medium">
+                                                <span className="capitalize">{sale.payment_method}</span>
+                                                {sale.payment_method === 'gcash' && sale.reference_number && (
+                                                    <span className="text-[10px] ml-1 bg-[#dddddd] px-1.5 py-0.5 rounded-md text-[#818181]">
+                                                        {sale.reference_number}
+                                                    </span>
+                                                )}
                                             </td>
                                             <td className="px-4 py-3 text-sm font-semibold text-[#818181] text-right print:text-black print:p-2">
                                                 {PESO}{Number(sale.total_amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}

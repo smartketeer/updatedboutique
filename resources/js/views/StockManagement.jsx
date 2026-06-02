@@ -1,7 +1,7 @@
 import React, { Fragment, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { Dialog, Transition, Menu } from '@headlessui/react';
-import { ArrowDownCircle, ArrowUpCircle, Edit3, ShoppingBag, Plus, X, Package } from 'lucide-react';
+import { ArrowDownCircle, ArrowUpCircle, Edit3, ShoppingBag, Plus, X, Package, Search, Save, Pencil } from 'lucide-react';
 
 const PESO = '\u20B1';
 const EM_DASH = '\u2014';
@@ -35,6 +35,12 @@ const StockManagement = () => {
 
     const [isAddItemOpen, setIsAddItemOpen] = useState(false);
     const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
+
+    // Adjust tab state
+    const [adjustSearch, setAdjustSearch] = useState('');
+    const [editingItemId, setEditingItemId] = useState(null);
+    const [editForm, setEditForm] = useState({ name: '', price: '', cost: '' });
+    const [adjustSaving, setAdjustSaving] = useState(false);
 
     const [categories, setCategories] = useState([]);
     const categoriesForSelect = useMemo(
@@ -226,9 +232,48 @@ const StockManagement = () => {
         }
     };
 
+    const adjustFilteredItems = useMemo(() => {
+        const q = String(adjustSearch || '').trim().toLowerCase();
+        if (!q) return items;
+        return items.filter((it) => {
+            const name = String(it?.name || '').toLowerCase();
+            const sku = String(it?.sku || '').toLowerCase();
+            return name.includes(q) || sku.includes(q);
+        });
+    }, [items, adjustSearch]);
+
+    const startEdit = (item) => {
+        setEditingItemId(item.id);
+        setEditForm({ name: item.name || '', price: String(item.price || ''), cost: String(item.cost || '') });
+    };
+
+    const cancelEdit = () => {
+        setEditingItemId(null);
+        setEditForm({ name: '', price: '', cost: '' });
+    };
+
+    const saveAdjust = async (itemId) => {
+        if (!editForm.name.trim()) { alert('Name is required.'); return; }
+        setAdjustSaving(true);
+        try {
+            await axios.put(`/api/stock-management/items/${itemId}`, {
+                name: editForm.name.trim(),
+                price: Number(editForm.price || 0),
+                cost: Number(editForm.cost || 0),
+            });
+            cancelEdit();
+            await loadCatalog(branchId);
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to save changes.');
+        } finally {
+            setAdjustSaving(false);
+        }
+    };
+
     const tabConfig = [
         { key: 'receipt', label: 'Stock In', icon: ArrowDownCircle, helper: 'Record stocks bought or received from supplier.' },
         { key: 'issue', label: 'Stock Out', icon: ArrowUpCircle, helper: 'Record stock used, transferred, or dispatched.' },
+        { key: 'adjust', label: 'Adjust', icon: Pencil, helper: 'Edit product name, capital price, or selling price.' },
     ];
 
     const entryTitle = tab === 'receipt' ? 'Add Stock In' : 'Add Stock Out';
@@ -353,6 +398,85 @@ const StockManagement = () => {
                     </div>
                 </div>
 
+                {tab === 'adjust' ? (
+                <div className="p-5">
+                    <div className="rounded-2xl border border-[#cbcbcb] bg-white overflow-hidden">
+                        <div className="px-4 py-3 border-b border-[#cbcbcb] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div className="text-sm font-semibold text-[#818181]">Adjust Product Details</div>
+                            <div className="relative w-full sm:w-72">
+                                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#a6a6a6]" />
+                                <input type="text" value={adjustSearch} onChange={(e) => setAdjustSearch(e.target.value)} placeholder="Search by name or SKU…" className="w-full pl-9 pr-3 py-2 border border-[#cbcbcb] rounded-xl text-sm font-medium text-[#818181] bg-white" />
+                            </div>
+                        </div>
+                        <div className="overflow-auto" style={{maxHeight:'calc(100vh - 22rem)'}}>
+                            <table className="w-full text-left">
+                                <thead className="sticky top-0 bg-white z-10">
+                                    <tr className="text-[#a6a6a6] text-xs font-semibold uppercase tracking-widest border-b border-[#cbcbcb]">
+                                        <th className="px-4 py-3">Product Name</th>
+                                        <th className="px-4 py-3">SKU</th>
+                                        <th className="px-4 py-3">Capital Price</th>
+                                        <th className="px-4 py-3">Selling Price</th>
+                                        <th className="px-4 py-3 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-[#cbcbcb]">
+                                    {itemsLoading ? (
+                                        Array.from({length:8}).map((_,i) => (
+                                            <tr key={`adj-skel-${i}`}><td className="px-4 py-3" colSpan={5}><div className="h-4 w-full bg-zinc-200 rounded animate-pulse" /></td></tr>
+                                        ))
+                                    ) : adjustFilteredItems.length === 0 ? (
+                                        <tr><td colSpan={5} className="px-4 py-10 text-center text-sm font-medium text-[#a6a6a6]">No items found.</td></tr>
+                                    ) : (
+                                        adjustFilteredItems.map((it) => {
+                                            const isEditing = editingItemId === it.id;
+                                            return (
+                                                <tr key={it.id} className="hover:bg-[#dddddd] transition-colors">
+                                                    <td className="px-4 py-3">
+                                                        {isEditing ? (
+                                                            <input type="text" value={editForm.name} onChange={(e) => setEditForm({...editForm, name: e.target.value})} className="w-full px-2 py-1.5 border border-[#cbcbcb] rounded-lg text-sm font-medium" />
+                                                        ) : (
+                                                            <span className="text-sm font-semibold text-[#818181]">{it.name}</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-xs font-medium text-[#a6a6a6]">{it.sku || EM_DASH}</td>
+                                                    <td className="px-4 py-3">
+                                                        {isEditing ? (
+                                                            <input type="number" value={editForm.cost} onChange={(e) => setEditForm({...editForm, cost: e.target.value})} className="w-24 px-2 py-1.5 border border-[#cbcbcb] rounded-lg text-sm font-medium" />
+                                                        ) : (
+                                                            <span className="text-sm font-medium text-[#818181]">{PESO}{Number(it.cost||0).toLocaleString()}</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        {isEditing ? (
+                                                            <input type="number" value={editForm.price} onChange={(e) => setEditForm({...editForm, price: e.target.value})} className="w-24 px-2 py-1.5 border border-[#cbcbcb] rounded-lg text-sm font-medium" />
+                                                        ) : (
+                                                            <span className="text-sm font-medium text-[#818181]">{PESO}{Number(it.price||0).toLocaleString()}</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right">
+                                                        {isEditing ? (
+                                                            <div className="flex items-center justify-end gap-2">
+                                                                <button type="button" onClick={() => saveAdjust(it.id)} disabled={adjustSaving} className="px-3 py-1.5 bg-[#818181] text-white text-xs font-semibold rounded-lg hover:bg-[#6a6a6a] disabled:opacity-50">
+                                                                    {adjustSaving ? 'Saving…' : 'Save'}
+                                                                </button>
+                                                                <button type="button" onClick={cancelEdit} className="px-3 py-1.5 border border-[#cbcbcb] text-xs font-semibold rounded-lg hover:bg-[#dddddd]">Cancel</button>
+                                                            </div>
+                                                        ) : (
+                                                            <button type="button" onClick={() => startEdit(it)} className="px-3 py-1.5 border border-[#cbcbcb] text-xs font-semibold rounded-lg hover:bg-[#dddddd] inline-flex items-center gap-1">
+                                                                <Pencil size={12} /> Edit
+                                                            </button>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                ) : (
                 <div className="p-5 grid grid-cols-1 lg:grid-cols-3 gap-4">
                     <div className="lg:col-span-1 rounded-2xl border border-[#cbcbcb] bg-white overflow-hidden">
                         <div className="px-4 py-3 border-b border-[#cbcbcb]">
@@ -601,6 +725,7 @@ const StockManagement = () => {
                         </div>
                     </div>
                 </div>
+                )}
             </div>
 
             <Transition appear show={isAddItemOpen} as={Fragment}>

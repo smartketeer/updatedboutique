@@ -51,10 +51,10 @@ const CashierHistory = () => {
         setVoidLoading(true);
         setVoidError('');
         try {
-            await axios.post(`/api/sales/${voidingSaleId}/void`, { reason: voidReason.trim() });
+            await axios.post(`/api/sales/${voidingSaleId}/request-void`, { reason: voidReason.trim() });
             setVoidingSaleId(null);
             setVoidReason('');
-            fetchSales(); // Refresh list to show voided status
+            fetchSales(); // Refresh list to show pending void status
         } catch (err) {
             setVoidError(err.response?.data?.message || 'Failed to void transaction.');
         } finally {
@@ -62,7 +62,7 @@ const CashierHistory = () => {
         }
     };
 
-    const totalRevenue = sales.filter(s => s.status !== 'voided').reduce((sum, s) => sum + Number(s.total_amount || 0), 0);
+    const totalRevenue = sales.filter(s => s.status === 'completed').reduce((sum, s) => sum + Number(s.total_amount || 0), 0);
 
     return (
         <div className="space-y-6 max-w-7xl mx-auto">
@@ -175,17 +175,19 @@ const CashierHistory = () => {
                                             <td className="px-6 py-3 text-center">
                                                 {sale.status === 'voided' ? (
                                                     <span className="px-2 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-md uppercase tracking-wider">Voided</span>
+                                                ) : sale.status === 'pending_void' ? (
+                                                    <span className="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-semibold rounded-md uppercase tracking-wider">Pending Void</span>
                                                 ) : (
                                                     <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-md uppercase tracking-wider">Completed</span>
                                                 )}
                                             </td>
                                             <td className="px-6 py-3 text-right">
-                                                {sale.status !== 'voided' && (
+                                                {sale.status === 'completed' && (
                                                     <button
                                                         onClick={() => setVoidingSaleId(sale.id)}
                                                         className="text-xs font-semibold text-red-500 hover:text-red-700 underline underline-offset-2 transition-colors"
                                                     >
-                                                        Void Sale
+                                                        Request Void
                                                     </button>
                                                 )}
                                             </td>
@@ -202,9 +204,9 @@ const CashierHistory = () => {
             {voidingSaleId && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
                     <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl border border-[#19140015]">
-                        <h3 className="text-lg font-semibold text-[#818181] mb-2">Void Transaction</h3>
+                        <h3 className="text-lg font-semibold text-[#818181] mb-2">Request Void Transaction</h3>
                         <p className="text-sm text-[#a6a6a6] mb-4">
-                            Are you sure you want to void this sale? This will return all items to inventory and deduct the total from today's revenue.
+                            Are you sure you want to request a void? This will require admin approval before the items are returned to inventory.
                         </p>
                         <div className="mb-4">
                             <label className="block text-xs font-semibold text-[#a6a6a6] uppercase tracking-widest mb-1">Reason for Voiding *</label>
@@ -230,7 +232,7 @@ const CashierHistory = () => {
                                 disabled={voidLoading}
                                 className="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg shadow-sm transition-colors disabled:opacity-50"
                             >
-                                {voidLoading ? 'Voiding...' : 'Confirm Void'}
+                                {voidLoading ? 'Requesting...' : 'Submit Request'}
                             </button>
                         </div>
                     </div>

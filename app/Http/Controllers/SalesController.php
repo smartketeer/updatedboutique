@@ -423,7 +423,11 @@ class SalesController extends Controller
         }
 
         if ($status = request()->query('status')) {
-            $query->where('status', $status);
+            if ($status === 'voids_and_pending') {
+                $query->whereIn('status', ['voided', 'pending_void']);
+            } else {
+                $query->where('status', $status);
+            }
         }
 
         if ($q = request()->query('q')) {
@@ -561,7 +565,7 @@ class SalesController extends Controller
         return $value;
     }
 
-    public function voidSale(Request $request, Sale $sale)
+    public function requestVoid(Request $request, Sale $sale)
     {
         $request->validate([
             'reason' => 'required|string|min:5|max:255',
@@ -573,19 +577,59 @@ class SalesController extends Controller
                 throw ValidationException::withMessages(['staff' => ['Unauthorized.']]);
             }
 
-            // Find the branch ID from the cashier's token, similar to checkout
-            $tokenId = $staff->currentAccessToken()->id ?? null;
-            $branchId = $tokenId ? BranchResolver::getActiveBranchId($staff, $tokenId) : null;
-            
-            // If we can't find it dynamically, fallback to the sale's logged branch via ActivityLog or assumption.
-            // But we know checkout logs activity with 'branch_id'.
-            if (!$branchId) {
-                // Best effort attempt to find branch from the sale creation activity log
-                $creationLog = ActivityLog::where('event_type', 'sale_completed')
-                    ->where('metadata->sale_id', $sale->id)
-                    ->first();
-                $branchId = $creationLog ? ($creationLog->metadata['branch_id'] ?? null) : null;
+            $sale = Sale::lockForUpdate()->find($sale->id);
+
+            if ($sale->status === 'voided') {
+                return response()->json(['message' => 'Sale is already voided.'], 400);
             }
+            if ($sale->status === 'pending_void') {
+                return response()->json(['message' => 'Sale is already pending void approval.'], 400);
+            }
+            if ($sale->status !== 'completed') {
+                return response()->json(['message' => 'Only completed sales can be voided.'], 400);
+            }
+
+            // 1. Mark as pending_void
+            $sale->status = 'pending_void';
+            $sale->save();
+
+            // 2. Log the request
+            $total = number_format($sale->total_amount, 2);
+            $reason = trim($request->reason);
+            
+            ActivityLog::create([
+                'actor_user_id' => $staff->id,
+                'event_type'    => 'sale_void_requested',
+                'description'   => "{$staff->name} requested to void sale #{$sale->id} (₱{$total}). Reason: {$reason}.",
+                'metadata'      => [
+                    'sale_id'   => $sale->id,
+                    'reason'    => $reason,
+                    'total_amount' => $sale->total_amount,
+                ],
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+
+            return response()->json([
+                'sale' => $sale->load(['client', 'staff', 'saleItems.item', 'customItems', 'modifications.admin', 'modifications.cashier']),
+                'message' => 'Void requested successfully. Waiting for admin approval.',
+            ], 200);
+        });
+    }
+
+    public function approveVoid(Request $request, Sale $sale)
+    {
+        return DB::transaction(function () use ($request, $sale) {
+            $admin = $request->user();
+            if (! $admin || $admin->role !== 'admin') {
+                throw ValidationException::withMessages(['admin' => ['Unauthorized.']]);
+            }
+
+            // Find the branch ID from the sale creation activity log
+            $creationLog = ActivityLog::where('event_type', 'sale_completed')
+                ->where('metadata->sale_id', $sale->id)
+                ->first();
+            $branchId = $creationLog ? ($creationLog->metadata['branch_id'] ?? null) : null;
 
             if (! $branchId) {
                 throw ValidationException::withMessages(['branch' => ['Could not determine branch for stock return.']]);
@@ -594,12 +638,8 @@ class SalesController extends Controller
             // Must lock for update to prevent race conditions
             $sale = Sale::lockForUpdate()->find($sale->id);
 
-            if ($sale->status === 'voided') {
-                return response()->json(['message' => 'Sale is already voided.'], 400);
-            }
-
-            if ($sale->status !== 'completed') {
-                return response()->json(['message' => 'Only completed sales can be voided.'], 400);
+            if ($sale->status !== 'pending_void') {
+                return response()->json(['message' => 'Sale is not pending void approval.'], 400);
             }
 
             // 1. Mark as voided
@@ -625,10 +665,10 @@ class SalesController extends Controller
                         StockLog::create([
                             'item_id' => $item->id,
                             'branch_id' => $branchId,
-                            'actor_user_id' => $staff->id,
+                            'actor_user_id' => $admin->id,
                             'change_qty' => $saleItem->quantity,
                             'new_qty' => (int) $stock->quantity,
-                            'reason' => 'void_sale',
+                            'reason' => 'void_sale_approved',
                         ]);
                         
                         $restoredItems[] = "{$item->name} ×{$saleItem->quantity}";
@@ -650,18 +690,16 @@ class SalesController extends Controller
                 }
             }
 
-            // 4. Log the void action
+            // 4. Log the void approval
             $total = number_format($sale->total_amount, 2);
-            $reason = trim($request->reason);
             $restoredSummary = count($restoredItems) > 0 ? implode(', ', $restoredItems) : 'No physical items to return';
             
             ActivityLog::create([
-                'actor_user_id' => $staff->id,
-                'event_type'    => 'sale_voided',
-                'description'   => "{$staff->name} voided sale #{$sale->id} (₱{$total}). Reason: {$reason}. Returned: {$restoredSummary}.",
+                'actor_user_id' => $admin->id,
+                'event_type'    => 'sale_void_approved',
+                'description'   => "{$admin->name} approved void for sale #{$sale->id} (₱{$total}). Returned: {$restoredSummary}.",
                 'metadata'      => [
                     'sale_id'   => $sale->id,
-                    'reason'    => $reason,
                     'branch_id' => $branchId,
                     'total_amount' => $sale->total_amount,
                 ],
@@ -671,14 +709,14 @@ class SalesController extends Controller
 
             return response()->json([
                 'sale' => $sale->load(['client', 'staff', 'saleItems.item', 'customItems', 'modifications.admin', 'modifications.cashier']),
-                'message' => 'Transaction voided successfully. Stock has been returned.',
+                'message' => 'Transaction void approved successfully. Stock has been returned.',
             ], 200);
         });
     }
 
     public function getVoidReason(Sale $sale)
     {
-        $log = ActivityLog::where('event_type', 'sale_voided')
+        $log = ActivityLog::where('event_type', 'sale_void_requested')
             ->where('metadata->sale_id', $sale->id)
             ->first();
 

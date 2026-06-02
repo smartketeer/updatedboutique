@@ -12,6 +12,7 @@ const AdminVoidHistory = () => {
     const [viewReasonSaleId, setViewReasonSaleId] = React.useState(null);
     const [viewReasonText, setViewReasonText] = React.useState('');
     const [reasonLoading, setReasonLoading] = React.useState(false);
+    const [approvingSaleId, setApprovingSaleId] = React.useState(null);
 
     const handleViewReason = async (saleId) => {
         setViewReasonSaleId(saleId);
@@ -31,14 +32,14 @@ const AdminVoidHistory = () => {
         setLoading(true);
         try {
             const params = new URLSearchParams();
-            params.set('status', 'voided'); // Only fetch voided transactions
+            params.set('status', 'voids_and_pending'); // Fetch both voided and pending
             if (date) params.set('date', date);
             if (q.trim()) params.set('q', q.trim());
             
             const res = await axios.get(`/api/sales?${params.toString()}`);
-            // Failsafe: only keep genuinely voided sales in case the backend hasn't updated its cache yet
+            // Failsafe: only keep genuinely voided or pending sales
             const trulyVoided = Array.isArray(res.data) 
-                ? res.data.filter(s => s.status === 'voided') 
+                ? res.data.filter(s => s.status === 'voided' || s.status === 'pending_void') 
                 : [];
             setSales(trulyVoided);
         } catch (err) {
@@ -52,7 +53,20 @@ const AdminVoidHistory = () => {
         fetchVoidedSales();
     }, [fetchVoidedSales]);
 
-    const totalVoidedAmount = sales.reduce((sum, s) => sum + Number(s.total_amount || 0), 0);
+    const handleApproveVoid = async (saleId) => {
+        if (!window.confirm('Are you sure you want to approve this void? Stock will be returned.')) return;
+        setApprovingSaleId(saleId);
+        try {
+            await axios.post(`/api/sales/${saleId}/approve-void`);
+            fetchVoidedSales();
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to approve void.');
+        } finally {
+            setApprovingSaleId(null);
+        }
+    };
+
+    const totalVoidedAmount = sales.filter(s => s.status === 'voided').reduce((sum, s) => sum + Number(s.total_amount || 0), 0);
 
     return (
         <div className="space-y-6 max-w-7xl mx-auto">
@@ -150,15 +164,30 @@ const AdminVoidHistory = () => {
                                                 {PESO}{Number(sale.total_amount || 0).toLocaleString()}
                                             </td>
                                             <td className="px-6 py-3 text-center">
-                                                <span className="px-2 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-md uppercase tracking-wider">Voided</span>
+                                                {sale.status === 'voided' ? (
+                                                    <span className="px-2 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-md uppercase tracking-wider">Voided</span>
+                                                ) : sale.status === 'pending_void' ? (
+                                                    <span className="px-2 py-1 bg-yellow-100 text-yellow-700 text-xs font-semibold rounded-md uppercase tracking-wider">Pending</span>
+                                                ) : null}
                                             </td>
                                             <td className="px-6 py-3 text-right">
-                                                <button
-                                                    onClick={() => handleViewReason(sale.id)}
-                                                    className="text-xs font-semibold text-[#818181] hover:text-[#2D4F3E] underline underline-offset-2 transition-colors"
-                                                >
-                                                    View Reason
-                                                </button>
+                                                <div className="flex items-center justify-end gap-3">
+                                                    {sale.status === 'pending_void' && (
+                                                        <button
+                                                            onClick={() => handleApproveVoid(sale.id)}
+                                                            disabled={approvingSaleId === sale.id}
+                                                            className="px-3 py-1 bg-[#2D4F3E] text-white text-xs font-semibold rounded-lg hover:bg-[#1f382a] disabled:opacity-50 transition-colors"
+                                                        >
+                                                            {approvingSaleId === sale.id ? 'Approving...' : 'Approve'}
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        onClick={() => handleViewReason(sale.id)}
+                                                        className="text-xs font-semibold text-[#818181] hover:text-[#2D4F3E] underline underline-offset-2 transition-colors"
+                                                    >
+                                                        View Reason
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     );

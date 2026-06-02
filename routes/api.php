@@ -43,7 +43,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/sales', [SalesController::class, 'index']);
     Route::middleware('role:staff')->group(function () {
         Route::post('/sales', [SalesController::class, 'store']);
-        Route::post('/sales/{sale}/void', [SalesController::class, 'voidSale']);
+        Route::post('/sales/{sale}/request-void', [SalesController::class, 'requestVoid']);
         Route::post('/stock-warnings', [SalesController::class, 'stockWarning']);
         Route::post('/override-approvals', [OverrideApprovalController::class, 'store']);
         Route::post('/inventory-access/request', [InventoryAccessController::class, 'requestAccess']);
@@ -118,7 +118,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/reports/staff-performance', [ReportingController::class, 'staffPerformance']);
         Route::get('/reports/inventory-valuation', [ReportingController::class, 'inventoryValuation']);
 
-        // Sales Void Reason
+        // Sales Void Flow
         Route::get('/sales/{sale}/void-reason', [SalesController::class, 'getVoidReason']);
+        Route::post('/sales/{sale}/approve-void', [SalesController::class, 'approveVoid']);
     });
 });

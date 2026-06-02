@@ -556,4 +556,119 @@ class SalesController extends Controller
 
         return $value;
     }
+
+    public function voidSale(Request $request, Sale $sale)
+    {
+        $request->validate([
+            'reason' => 'required|string|min:5|max:255',
+        ]);
+
+        return DB::transaction(function () use ($request, $sale) {
+            $staff = $request->user();
+            if (! $staff) {
+                throw ValidationException::withMessages(['staff' => ['Unauthorized.']]);
+            }
+
+            // Find the branch ID from the cashier's token, similar to checkout
+            $tokenId = $staff->currentAccessToken()->id ?? null;
+            $branchId = $tokenId ? BranchResolver::getActiveBranchId($staff, $tokenId) : null;
+            
+            // If we can't find it dynamically, fallback to the sale's logged branch via ActivityLog or assumption.
+            // But we know checkout logs activity with 'branch_id'.
+            if (!$branchId) {
+                // Best effort attempt to find branch from the sale creation activity log
+                $creationLog = ActivityLog::where('event_type', 'sale_completed')
+                    ->where('metadata->sale_id', $sale->id)
+                    ->first();
+                $branchId = $creationLog ? ($creationLog->metadata['branch_id'] ?? null) : null;
+            }
+
+            if (! $branchId) {
+                throw ValidationException::withMessages(['branch' => ['Could not determine branch for stock return.']]);
+            }
+
+            // Must lock for update to prevent race conditions
+            $sale = Sale::lockForUpdate()->find($sale->id);
+
+            if ($sale->status === 'voided') {
+                return response()->json(['message' => 'Sale is already voided.'], 400);
+            }
+
+            if ($sale->status !== 'completed') {
+                return response()->json(['message' => 'Only completed sales can be voided.'], 400);
+            }
+
+            // 1. Mark as voided
+            $sale->status = 'voided';
+            $sale->save();
+
+            $restoredItems = [];
+
+            // 2. Return items to stock
+            foreach ($sale->saleItems as $saleItem) {
+                $item = Item::lockForUpdate()->find($saleItem->item_id);
+                if ($item && !$item->is_service) {
+                    $stock = BranchItemStock::query()
+                        ->where('branch_id', $branchId)
+                        ->where('item_id', $item->id)
+                        ->lockForUpdate()
+                        ->first();
+                        
+                    if ($stock) {
+                        $stock->increment('quantity', $saleItem->quantity);
+                        $item->increment('stock_qty', $saleItem->quantity);
+                        
+                        StockLog::create([
+                            'item_id' => $item->id,
+                            'branch_id' => $branchId,
+                            'actor_user_id' => $staff->id,
+                            'change_qty' => $saleItem->quantity,
+                            'new_qty' => (int) $stock->quantity,
+                            'reason' => 'void_sale',
+                        ]);
+                        
+                        $restoredItems[] = "{$item->name} ×{$saleItem->quantity}";
+                    }
+                }
+            }
+
+            // 3. Subtract loyalty points if applicable
+            if ($sale->client_id) {
+                $client = Client::find($sale->client_id);
+                if ($client) {
+                    $points = floor($sale->total_amount / 100);
+                    $client->decrement('loyalty_points', $points);
+                    // Prevent negative points just in case
+                    if ($client->loyalty_points < 0) {
+                        $client->loyalty_points = 0;
+                        $client->save();
+                    }
+                }
+            }
+
+            // 4. Log the void action
+            $total = number_format($sale->total_amount, 2);
+            $reason = trim($request->reason);
+            $restoredSummary = count($restoredItems) > 0 ? implode(', ', $restoredItems) : 'No physical items to return';
+            
+            ActivityLog::create([
+                'actor_user_id' => $staff->id,
+                'event_type'    => 'sale_voided',
+                'description'   => "{$staff->name} voided sale #{$sale->id} (₱{$total}). Reason: {$reason}. Returned: {$restoredSummary}.",
+                'metadata'      => [
+                    'sale_id'   => $sale->id,
+                    'reason'    => $reason,
+                    'branch_id' => $branchId,
+                    'total_amount' => $sale->total_amount,
+                ],
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+
+            return response()->json([
+                'sale' => $sale->load(['client', 'staff', 'saleItems.item', 'customItems', 'modifications.admin', 'modifications.cashier']),
+                'message' => 'Transaction voided successfully. Stock has been returned.',
+            ], 200);
+        });
+    }
 }

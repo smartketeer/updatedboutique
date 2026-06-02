@@ -43,6 +43,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/sales', [SalesController::class, 'index']);
     Route::middleware('role:staff')->group(function () {
         Route::post('/sales', [SalesController::class, 'store']);
+        Route::post('/sales/{sale}/void', [SalesController::class, 'voidSale']);
         Route::post('/stock-warnings', [SalesController::class, 'stockWarning']);
         Route::post('/override-approvals', [OverrideApprovalController::class, 'store']);
         Route::post('/inventory-access/request', [InventoryAccessController::class, 'requestAccess']);

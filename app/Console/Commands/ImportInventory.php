@@ -97,6 +97,11 @@ class ImportInventory extends Command
                 }
 
                 $name = trim($row[$colDesc]);
+
+                // Skip the actual header row if it is found lower in the file
+                if (strtolower($name) === 'description' || strtolower($name) === 'name') {
+                    continue;
+                }
                 
                 // Clean money values (remove currency symbols and commas)
                 $costStr = isset($row[$colCapital]) ? preg_replace('/[^0-9.]/', '', $row[$colCapital]) : '0';

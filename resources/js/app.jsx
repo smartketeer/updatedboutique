@@ -15,6 +15,7 @@ import CashierAccounts from './views/CashierAccounts';
 import StockManagement from './views/StockManagement';
 import AdminVoidHistory from './views/AdminVoidHistory';
 import Settings from './views/Settings';
+import AdminSalesHistory from './views/AdminSalesHistory';
 import Branches from './views/Branches';
 import StyleGuide from './views/StyleGuide';
 import { useAuthStore } from './store/authStore';
@@ -98,6 +99,7 @@ const App = () => {
                         <Route path="settings" element={<Settings />} />
                         <Route path="branches" element={<Branches />} />
                         <Route path="reports" element={<Reports />} />
+                        <Route path="sales" element={<AdminSalesHistory />} />
                         <Route path="voids" element={<AdminVoidHistory />} />
                         <Route path="style-guide" element={<StyleGuide />} />
                     </Route>

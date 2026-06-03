@@ -54,6 +54,9 @@ class InventoryAccessMiddleware
             return response()->json(['message' => 'Inventory access token is invalid.'], 403);
         }
 
+        // Extend the session by 60 minutes from now due to activity
+        $session->update(['expires_at' => now()->addMinutes(60)]);
+
         $request->attributes->set('inventory_access_session', $session);
 
         return $next($request);

@@ -401,7 +401,7 @@ class InventoryAccessController extends Controller
                 'cashier_id' => $cashier->id,
                 'request_id' => $accessRequest->id,
                 'secret_hash' => hash('sha256', $secret),
-                'expires_at' => now()->addMinutes(30),
+                'expires_at' => now()->addMinutes(60),
                 'revoked_at' => null,
                 'ip_address' => $request->ip(),
                 'user_agent' => $request->userAgent(),

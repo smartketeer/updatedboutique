@@ -98,7 +98,7 @@ const CashierInventoryManagement = () => {
         setLoading(true);
         setError('');
         try {
-            const params = { page, per_page: 10 };
+            const params = { page, per_page: 10, _t: Date.now() };
             if (debouncedQ) params.q = debouncedQ;
             if (categoryId && categoryId !== 'all') params.category_id = categoryId;
             const [itemsRes, catsRes, settingsRes] = await Promise.all([

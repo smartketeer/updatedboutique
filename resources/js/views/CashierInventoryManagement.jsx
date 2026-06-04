@@ -345,6 +345,10 @@ const CashierInventoryManagement = () => {
     const handleTransferSubmit = async (e) => {
         e.preventDefault();
         setTransferPullOutError('');
+        if (!transferForm.reason.trim()) {
+            setTransferPullOutError('A reason is required.');
+            return;
+        }
         try {
             await axios.post(`/api/cashier/inventory/${transferItem.id}/transfer`, transferForm, {
                 headers: { 'X-Inventory-Access-Token': accessToken }
@@ -353,7 +357,7 @@ const CashierInventoryManagement = () => {
             setTransferItem(null);
             await fetchData();
         } catch (err) {
-            const msg = err.response?.data?.message || err.response?.data?.errors?.quantity?.[0] || 'Transfer failed';
+            const msg = err.response?.data?.message || err.response?.data?.errors?.quantity?.[0] || err.response?.data?.errors?.reason?.[0] || 'Transfer failed';
             if (err.response?.status === 403) {
                 await clearAccess();
                 setAuthError(msg);
@@ -367,6 +371,10 @@ const CashierInventoryManagement = () => {
     const handlePullOutSubmit = async (e) => {
         e.preventDefault();
         setTransferPullOutError('');
+        if (!pullOutForm.reason.trim()) {
+            setTransferPullOutError('A reason is required.');
+            return;
+        }
         try {
             await axios.post(`/api/cashier/inventory/${pullOutItem.id}/pull-out`, pullOutForm, {
                 headers: { 'X-Inventory-Access-Token': accessToken }
@@ -375,7 +383,7 @@ const CashierInventoryManagement = () => {
             setPullOutItem(null);
             await fetchData();
         } catch (err) {
-            const msg = err.response?.data?.message || err.response?.data?.errors?.quantity?.[0] || 'Pull out failed';
+            const msg = err.response?.data?.message || err.response?.data?.errors?.quantity?.[0] || err.response?.data?.errors?.reason?.[0] || 'Pull out failed';
             if (err.response?.status === 403) {
                 await clearAccess();
                 setAuthError(msg);

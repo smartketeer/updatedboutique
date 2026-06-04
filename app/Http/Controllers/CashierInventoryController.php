@@ -376,4 +376,158 @@ class CashierInventoryController extends Controller
 
         return response()->json(null, 204);
     }
+
+    public function pullOut(Request $request, Item $item)
+    {
+        $validated = $request->validate([
+            'quantity' => 'required|integer|min:1',
+            'reason' => 'required|string|max:500',
+        ]);
+
+        return DB::transaction(function () use ($request, $validated, $item) {
+            $user = $request->user();
+            $branchId = $this->resolveBranchId($request);
+            if (! $branchId) {
+                return response()->json(['message' => 'No branch is configured yet.'], 422);
+            }
+
+            if ($item->is_service) {
+                return response()->json(['message' => 'Cannot pull out services.'], 422);
+            }
+
+            $stock = BranchItemStock::query()
+                ->lockForUpdate()
+                ->where('branch_id', $branchId)
+                ->where('item_id', $item->id)
+                ->first();
+
+            $qty = (int) $validated['quantity'];
+
+            if (! $stock || $stock->quantity < $qty) {
+                return response()->json(['message' => 'Insufficient stock for pull out.'], 422);
+            }
+
+            $stock->decrement('quantity', $qty);
+            $item->decrement('stock_qty', $qty);
+
+            StockLog::create([
+                'item_id' => $item->id,
+                'branch_id' => $branchId,
+                'actor_user_id' => $user?->id,
+                'change_qty' => -$qty,
+                'new_qty' => $stock->quantity,
+                'reason' => 'cashier_pull_out',
+                'notes' => trim($validated['reason']),
+            ]);
+
+            ActivityLog::create([
+                'actor_user_id' => $user?->id,
+                'event_type' => 'inventory_pull_out',
+                'description' => 'Pulled out stock via inventory management access.',
+                'metadata' => [
+                    'branch_id' => $branchId,
+                    'item_id' => $item->id,
+                    'item_name' => $item->name,
+                    'pulled_out_qty' => $qty,
+                    'reason' => trim($validated['reason']),
+                ],
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+
+            return response()->json(['message' => 'Stock pulled out successfully.']);
+        });
+    }
+
+    public function transfer(Request $request, Item $item)
+    {
+        $validated = $request->validate([
+            'to_branch_id' => 'required|integer|exists:branches,id',
+            'quantity' => 'required|integer|min:1',
+            'reason' => 'required|string|max:500',
+        ]);
+
+        return DB::transaction(function () use ($request, $validated, $item) {
+            $user = $request->user();
+            $fromBranchId = $this->resolveBranchId($request);
+            $toBranchId = (int) $validated['to_branch_id'];
+
+            if (! $fromBranchId) {
+                return response()->json(['message' => 'No active branch configured.'], 422);
+            }
+
+            if ($fromBranchId === $toBranchId) {
+                return response()->json(['message' => 'Cannot transfer to the same branch.'], 422);
+            }
+
+            if ($item->is_service) {
+                return response()->json(['message' => 'Cannot transfer services.'], 422);
+            }
+
+            $fromStock = BranchItemStock::query()
+                ->lockForUpdate()
+                ->where('branch_id', $fromBranchId)
+                ->where('item_id', $item->id)
+                ->first();
+
+            $qty = (int) $validated['quantity'];
+
+            if (! $fromStock || $fromStock->quantity < $qty) {
+                return response()->json(['message' => 'Insufficient stock for transfer.'], 422);
+            }
+
+            // Lock destination stock
+            $toStock = BranchItemStock::query()
+                ->lockForUpdate()
+                ->firstOrCreate(
+                    ['branch_id' => $toBranchId, 'item_id' => $item->id],
+                    ['quantity' => 0]
+                );
+
+            $fromStock->decrement('quantity', $qty);
+            $toStock->increment('quantity', $qty);
+
+            // Log for from branch
+            StockLog::create([
+                'item_id' => $item->id,
+                'branch_id' => $fromBranchId,
+                'actor_user_id' => $user?->id,
+                'change_qty' => -$qty,
+                'new_qty' => $fromStock->quantity,
+                'reason' => 'cashier_transfer_out',
+                'notes' => trim($validated['reason']),
+                'meta' => ['to_branch_id' => $toBranchId]
+            ]);
+
+            // Log for to branch
+            StockLog::create([
+                'item_id' => $item->id,
+                'branch_id' => $toBranchId,
+                'actor_user_id' => $user?->id,
+                'change_qty' => $qty,
+                'new_qty' => $toStock->quantity,
+                'reason' => 'cashier_transfer_in',
+                'notes' => trim($validated['reason']),
+                'meta' => ['from_branch_id' => $fromBranchId]
+            ]);
+
+            ActivityLog::create([
+                'actor_user_id' => $user?->id,
+                'event_type' => 'inventory_transfer',
+                'description' => 'Transferred stock via inventory management access.',
+                'metadata' => [
+                    'from_branch_id' => $fromBranchId,
+                    'to_branch_id' => $toBranchId,
+                    'item_id' => $item->id,
+                    'item_name' => $item->name,
+                    'transferred_qty' => $qty,
+                    'reason' => trim($validated['reason']),
+                ],
+                'ip_address' => $request->ip(),
+                'user_agent' => $request->userAgent(),
+            ]);
+
+            return response()->json(['message' => 'Stock transferred successfully.']);
+        });
+    }
 }

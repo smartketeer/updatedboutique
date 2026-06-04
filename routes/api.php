@@ -35,6 +35,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/inventory/by-ids', [InventoryController::class, 'byIds']);
     Route::get('/inventory/{item}', [InventoryController::class, 'show']);
     Route::get('/categories', [InventoryController::class, 'categories']);
+    Route::get('/active-branches', [BranchController::class, 'active']);
 
     // Branch selection (staff with multiple branches must call this before using POS)
     Route::middleware('role:staff')->post('/select-branch', [AuthController::class, 'selectBranch']);
@@ -54,6 +55,8 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/cashier/inventory', [CashierInventoryController::class, 'store']);
             Route::put('/cashier/inventory/{item}', [CashierInventoryController::class, 'update']);
             Route::delete('/cashier/inventory/{item}', [CashierInventoryController::class, 'destroy']);
+            Route::post('/cashier/inventory/{item}/transfer', [CashierInventoryController::class, 'transfer']);
+            Route::post('/cashier/inventory/{item}/pull-out', [CashierInventoryController::class, 'pullOut']);
         });
     });
 

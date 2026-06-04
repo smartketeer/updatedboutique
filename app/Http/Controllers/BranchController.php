@@ -16,6 +16,16 @@ class BranchController extends Controller
         );
     }
 
+    public function active()
+    {
+        return response()->json(
+            Branch::query()
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get()
+        );
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([

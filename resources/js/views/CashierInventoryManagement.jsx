@@ -1,7 +1,7 @@
 import React from 'react';
 import axios from 'axios';
 import { Dialog, Transition } from '@headlessui/react';
-import { Plus, X, Package, ShieldCheck, Trash2, Edit2, Search, Filter, Camera, Upload, ImagePlus, Star, Loader2, RefreshCw, Zap } from 'lucide-react';
+import { Plus, X, Package, ShieldCheck, Trash2, Edit2, Search, Filter, Camera, Upload, ImagePlus, Star, Loader2, RefreshCw, Zap, ArrowRightLeft, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 
@@ -55,6 +55,17 @@ const CashierInventoryManagement = () => {
         adjustment_reason: '',
     });
 
+    // ── Transfer / Pull Out state ──
+    const [isTransferMode, setIsTransferMode] = React.useState(false);
+    const [activeBranches, setActiveBranches] = React.useState([]);
+    const [isTransferModalOpen, setIsTransferModalOpen] = React.useState(false);
+    const [transferItem, setTransferItem] = React.useState(null);
+    const [transferForm, setTransferForm] = React.useState({ to_branch_id: '', quantity: '', reason: '' });
+    const [isPullOutModalOpen, setIsPullOutModalOpen] = React.useState(false);
+    const [pullOutItem, setPullOutItem] = React.useState(null);
+    const [pullOutForm, setPullOutForm] = React.useState({ quantity: '', reason: '' });
+    const [transferPullOutError, setTransferPullOutError] = React.useState('');
+
     // ── Photo modal state ──
     const [isPhotoModalOpen, setIsPhotoModalOpen] = React.useState(false);
     const [photoItem, setPhotoItem] = React.useState(null);
@@ -101,10 +112,11 @@ const CashierInventoryManagement = () => {
             const params = { page, per_page: 10, _t: Date.now() };
             if (debouncedQ) params.q = debouncedQ;
             if (categoryId && categoryId !== 'all') params.category_id = categoryId;
-            const [itemsRes, catsRes, settingsRes] = await Promise.all([
+            const [itemsRes, catsRes, settingsRes, branchesRes] = await Promise.all([
                 axios.get('/api/inventory', { params }),
                 axios.get('/api/categories'),
-                axios.get('/api/settings')
+                axios.get('/api/settings'),
+                axios.get('/api/active-branches')
             ]);
             const rows = Array.isArray(itemsRes.data?.data) ? itemsRes.data.data : Array.isArray(itemsRes.data) ? itemsRes.data : [];
             setItems(rows);
@@ -112,6 +124,7 @@ const CashierInventoryManagement = () => {
             setTotalPages(Number(itemsRes.data?.last_page || 1) || 1);
             setTotalItems(Number(itemsRes.data?.total || rows.length) || 0);
             setCategories(catsRes.data || []);
+            setActiveBranches(branchesRes.data || []);
             setSettings({
                 priceAdjustmentsEnabled: Boolean(settingsRes.data?.pos_price_adjustments_enabled),
                 customItemsEnabled: Boolean(settingsRes.data?.pos_custom_items_enabled),
@@ -312,6 +325,64 @@ const CashierInventoryManagement = () => {
                 return;
             }
             setError(msg);
+        }
+    };
+
+    const openTransferModal = (item) => {
+        setTransferItem(item);
+        setTransferForm({ to_branch_id: '', quantity: '', reason: '' });
+        setTransferPullOutError('');
+        setIsTransferModalOpen(true);
+    };
+
+    const openPullOutModal = (item) => {
+        setPullOutItem(item);
+        setPullOutForm({ quantity: '', reason: '' });
+        setTransferPullOutError('');
+        setIsPullOutModalOpen(true);
+    };
+
+    const handleTransferSubmit = async (e) => {
+        e.preventDefault();
+        setTransferPullOutError('');
+        try {
+            await axios.post(`/api/cashier/inventory/${transferItem.id}/transfer`, transferForm, {
+                headers: { 'X-Inventory-Access-Token': accessToken }
+            });
+            setIsTransferModalOpen(false);
+            setTransferItem(null);
+            await fetchData();
+        } catch (err) {
+            const msg = err.response?.data?.message || err.response?.data?.errors?.quantity?.[0] || 'Transfer failed';
+            if (err.response?.status === 403) {
+                await clearAccess();
+                setAuthError(msg);
+                setIsAuthModalOpen(true);
+                return;
+            }
+            setTransferPullOutError(msg);
+        }
+    };
+
+    const handlePullOutSubmit = async (e) => {
+        e.preventDefault();
+        setTransferPullOutError('');
+        try {
+            await axios.post(`/api/cashier/inventory/${pullOutItem.id}/pull-out`, pullOutForm, {
+                headers: { 'X-Inventory-Access-Token': accessToken }
+            });
+            setIsPullOutModalOpen(false);
+            setPullOutItem(null);
+            await fetchData();
+        } catch (err) {
+            const msg = err.response?.data?.message || err.response?.data?.errors?.quantity?.[0] || 'Pull out failed';
+            if (err.response?.status === 403) {
+                await clearAccess();
+                setAuthError(msg);
+                setIsAuthModalOpen(true);
+                return;
+            }
+            setTransferPullOutError(msg);
         }
     };
 
@@ -622,15 +693,26 @@ const CashierInventoryManagement = () => {
                         <ShieldCheck size={18} className="text-[#818181]" />
                         <h2 className="text-sm font-semibold text-[#818181]">Items</h2>
                     </div>
-                    <button
-                        type="button"
-                        onClick={openAddItem}
-                        disabled={!accessToken}
-                        className="h-9 px-3 text-xs font-semibold bg-[#818181] text-white rounded-xl hover:bg-[#a6a6a6] disabled:opacity-50 inline-flex items-center gap-2 shadow-sm transition-colors"
-                    >
-                        <Plus size={14} />
-                        Add Item
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setIsTransferMode(!isTransferMode)}
+                            disabled={!accessToken}
+                            className={`h-9 px-3 text-xs font-semibold rounded-xl inline-flex items-center gap-2 shadow-sm transition-colors disabled:opacity-50 ${isTransferMode ? 'bg-[#818181] text-white hover:bg-[#a6a6a6]' : 'bg-white border border-[#cbcbcb] text-[#818181] hover:bg-[#dddddd]'}`}
+                        >
+                            <ArrowRightLeft size={14} />
+                            {isTransferMode ? 'Cancel Transfer/Pull Out' : 'Transfer/Pull Out'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={openAddItem}
+                            disabled={!accessToken}
+                            className="h-9 px-3 text-xs font-semibold bg-[#818181] text-white rounded-xl hover:bg-[#a6a6a6] disabled:opacity-50 inline-flex items-center gap-2 shadow-sm transition-colors"
+                        >
+                            <Plus size={14} />
+                            Add Item
+                        </button>
+                    </div>
                 </div>
                 <div className="px-6 py-4 border-b border-[#cbcbcb] bg-white">
                     <div className="flex flex-col md:flex-row md:items-center gap-3">
@@ -712,24 +794,49 @@ const CashierInventoryManagement = () => {
                                             <td className="px-6 py-3 text-right text-[#a6a6a6] text-xs font-medium">{i.is_service ? '-' : i.stock_qty}</td>
                                             <td className="px-6 py-3">
                                                 <div className="flex justify-end gap-2">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => openEditItem(i)}
-                                                        disabled={!accessToken}
-                                                        className="px-3 py-1.5 text-xs font-medium text-[#818181] border border-[#cbcbcb] rounded-lg hover:bg-[#dddddd] disabled:opacity-50 inline-flex items-center gap-2 transition-colors"
-                                                    >
-                                                        <Edit2 size={14} />
-                                                        Edit
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleDeleteItem(i)}
-                                                        disabled={!accessToken}
-                                                        className="px-3 py-1.5 text-xs font-medium border border-[#cbcbcb] text-red-500 rounded-lg hover:bg-red-50 hover:border-red-200 disabled:opacity-50 inline-flex items-center gap-2 transition-colors"
-                                                    >
-                                                        <Trash2 size={14} />
-                                                        Delete
-                                                    </button>
+                                                    {isTransferMode ? (
+                                                        <>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => openTransferModal(i)}
+                                                                disabled={!accessToken || i.is_service}
+                                                                className="px-3 py-1.5 text-xs font-medium text-[#818181] border border-[#cbcbcb] rounded-lg hover:bg-[#dddddd] disabled:opacity-50 inline-flex items-center gap-2 transition-colors"
+                                                            >
+                                                                <ArrowRightLeft size={14} />
+                                                                Transfer
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => openPullOutModal(i)}
+                                                                disabled={!accessToken || i.is_service}
+                                                                className="px-3 py-1.5 text-xs font-medium border border-[#cbcbcb] text-orange-500 rounded-lg hover:bg-orange-50 hover:border-orange-200 disabled:opacity-50 inline-flex items-center gap-2 transition-colors"
+                                                            >
+                                                                <LogOut size={14} />
+                                                                Pull Out
+                                                            </button>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => openEditItem(i)}
+                                                                disabled={!accessToken}
+                                                                className="px-3 py-1.5 text-xs font-medium text-[#818181] border border-[#cbcbcb] rounded-lg hover:bg-[#dddddd] disabled:opacity-50 inline-flex items-center gap-2 transition-colors"
+                                                            >
+                                                                <Edit2 size={14} />
+                                                                Edit
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleDeleteItem(i)}
+                                                                disabled={!accessToken}
+                                                                className="px-3 py-1.5 text-xs font-medium border border-[#cbcbcb] text-red-500 rounded-lg hover:bg-red-50 hover:border-red-200 disabled:opacity-50 inline-flex items-center gap-2 transition-colors"
+                                                            >
+                                                                <Trash2 size={14} />
+                                                                Delete
+                                                            </button>
+                                                        </>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>
@@ -1092,6 +1199,130 @@ const CashierInventoryManagement = () => {
                                                 </div>
                                             )}
                                         </div>
+                                    </div>
+                                </Dialog.Panel>
+                            </Transition.Child>
+                        </div>
+                    </div>
+                </Dialog>
+            </Transition>
+
+            {/* ── Transfer Modal ── */}
+            <Transition appear show={isTransferModalOpen} as={React.Fragment}>
+                <Dialog as="div" className="relative z-[100]" onClose={() => setIsTransferModalOpen(false)}>
+                    <Transition.Child as={React.Fragment} enter="ease-out duration-200" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-150" leaveFrom="opacity-100" leaveTo="opacity-0">
+                        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
+                    </Transition.Child>
+                    <div className="fixed inset-0 overflow-y-auto">
+                        <div className="flex min-h-full items-center justify-center p-4">
+                            <Transition.Child as={React.Fragment} enter="ease-out duration-200" enterFrom="opacity-0 scale-95" enterTo="opacity-100 scale-100" leave="ease-in duration-150" leaveFrom="opacity-100 scale-100" leaveTo="opacity-0 scale-95">
+                                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white text-left align-middle shadow-xl transition-all border border-[#cbcbcb]">
+                                    <div className="px-6 py-4 border-b border-[#cbcbcb] flex items-center justify-between">
+                                        <Dialog.Title className="text-lg font-medium text-[#818181]">Transfer Stocks</Dialog.Title>
+                                        <button type="button" onClick={() => setIsTransferModalOpen(false)} className="text-[#a6a6a6] hover:text-[#818181] transition-colors"><X size={20} /></button>
+                                    </div>
+                                    <div className="px-6 py-4">
+                                        {transferPullOutError && <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm border border-red-100">{transferPullOutError}</div>}
+                                        <div className="mb-4">
+                                            <p className="text-sm font-medium text-[#818181] mb-1">Item:</p>
+                                            <p className="text-sm font-semibold">{transferItem?.name}</p>
+                                            <p className="text-xs text-[#a6a6a6]">Current Stock: {transferItem?.stock_qty}</p>
+                                        </div>
+                                        <form onSubmit={handleTransferSubmit} className="space-y-4">
+                                            <div>
+                                                <label className="block text-[11px] font-semibold text-[#a6a6a6] uppercase tracking-wider mb-1.5">To Branch</label>
+                                                <select
+                                                    required
+                                                    value={transferForm.to_branch_id}
+                                                    onChange={(e) => setTransferForm({ ...transferForm, to_branch_id: e.target.value })}
+                                                    className="w-full h-10 px-3 rounded-xl border border-[#cbcbcb] text-sm text-[#818181] bg-white focus:outline-none focus:border-[#818181] transition-colors appearance-none"
+                                                >
+                                                    <option value="">Select Branch</option>
+                                                    {activeBranches.map((b) => (
+                                                        <option key={b.id} value={b.id}>{b.name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="block text-[11px] font-semibold text-[#a6a6a6] uppercase tracking-wider mb-1.5">Quantity to Transfer</label>
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    required
+                                                    value={transferForm.quantity}
+                                                    onChange={(e) => setTransferForm({ ...transferForm, quantity: e.target.value })}
+                                                    className="w-full h-10 px-3 rounded-xl border border-[#cbcbcb] text-sm text-[#818181] bg-white focus:outline-none focus:border-[#818181] transition-colors"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[11px] font-semibold text-[#a6a6a6] uppercase tracking-wider mb-1.5">Reason</label>
+                                                <textarea
+                                                    required
+                                                    rows="3"
+                                                    value={transferForm.reason}
+                                                    onChange={(e) => setTransferForm({ ...transferForm, reason: e.target.value })}
+                                                    className="w-full p-3 rounded-xl border border-[#cbcbcb] text-sm text-[#818181] bg-white focus:outline-none focus:border-[#818181] transition-colors resize-none"
+                                                />
+                                            </div>
+                                            <div className="pt-2">
+                                                <button type="submit" className="w-full h-10 rounded-xl bg-[#818181] text-white text-[12px] font-semibold shadow-sm hover:bg-[#a6a6a6] transition-colors">Confirm Transfer</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </Dialog.Panel>
+                            </Transition.Child>
+                        </div>
+                    </div>
+                </Dialog>
+            </Transition>
+
+            {/* ── Pull Out Modal ── */}
+            <Transition appear show={isPullOutModalOpen} as={React.Fragment}>
+                <Dialog as="div" className="relative z-[100]" onClose={() => setIsPullOutModalOpen(false)}>
+                    <Transition.Child as={React.Fragment} enter="ease-out duration-200" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-150" leaveFrom="opacity-100" leaveTo="opacity-0">
+                        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
+                    </Transition.Child>
+                    <div className="fixed inset-0 overflow-y-auto">
+                        <div className="flex min-h-full items-center justify-center p-4">
+                            <Transition.Child as={React.Fragment} enter="ease-out duration-200" enterFrom="opacity-0 scale-95" enterTo="opacity-100 scale-100" leave="ease-in duration-150" leaveFrom="opacity-100 scale-100" leaveTo="opacity-0 scale-95">
+                                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white text-left align-middle shadow-xl transition-all border border-[#cbcbcb]">
+                                    <div className="px-6 py-4 border-b border-[#cbcbcb] flex items-center justify-between">
+                                        <Dialog.Title className="text-lg font-medium text-[#818181]">Pull Out Stocks</Dialog.Title>
+                                        <button type="button" onClick={() => setIsPullOutModalOpen(false)} className="text-[#a6a6a6] hover:text-[#818181] transition-colors"><X size={20} /></button>
+                                    </div>
+                                    <div className="px-6 py-4">
+                                        {transferPullOutError && <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm border border-red-100">{transferPullOutError}</div>}
+                                        <div className="mb-4">
+                                            <p className="text-sm font-medium text-[#818181] mb-1">Item:</p>
+                                            <p className="text-sm font-semibold">{pullOutItem?.name}</p>
+                                            <p className="text-xs text-[#a6a6a6]">Current Stock: {pullOutItem?.stock_qty}</p>
+                                        </div>
+                                        <form onSubmit={handlePullOutSubmit} className="space-y-4">
+                                            <div>
+                                                <label className="block text-[11px] font-semibold text-[#a6a6a6] uppercase tracking-wider mb-1.5">Quantity to Pull Out</label>
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    required
+                                                    value={pullOutForm.quantity}
+                                                    onChange={(e) => setPullOutForm({ ...pullOutForm, quantity: e.target.value })}
+                                                    className="w-full h-10 px-3 rounded-xl border border-[#cbcbcb] text-sm text-[#818181] bg-white focus:outline-none focus:border-[#818181] transition-colors"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[11px] font-semibold text-[#a6a6a6] uppercase tracking-wider mb-1.5">Reason</label>
+                                                <textarea
+                                                    required
+                                                    rows="3"
+                                                    value={pullOutForm.reason}
+                                                    onChange={(e) => setPullOutForm({ ...pullOutForm, reason: e.target.value })}
+                                                    className="w-full p-3 rounded-xl border border-[#cbcbcb] text-sm text-[#818181] bg-white focus:outline-none focus:border-[#818181] transition-colors resize-none"
+                                                />
+                                            </div>
+                                            <div className="pt-2">
+                                                <button type="submit" className="w-full h-10 rounded-xl border border-[#cbcbcb] text-orange-500 hover:bg-orange-50 hover:border-orange-200 text-[12px] font-semibold shadow-sm transition-colors">Confirm Pull Out</button>
+                                            </div>
+                                        </form>
                                     </div>
                                 </Dialog.Panel>
                             </Transition.Child>

@@ -17,7 +17,7 @@ class StockManagementController extends Controller
         $validated = $request->validate([
             'branch_id' => 'nullable|integer|exists:branches,id',
             'item_id' => 'nullable|integer|exists:items,id',
-            'reason' => 'nullable|string|in:receipt,issue,adjustment,supply,sale,import,initial_stock,cashier_restock,cashier_initial_stock,manual_adjustment',
+            'reason' => 'nullable|string',
             'from' => 'nullable|date',
             'to' => 'nullable|date',
             'limit' => 'nullable|integer|min:1|max:500',
@@ -34,7 +34,8 @@ class StockManagementController extends Controller
             $query->where('item_id', (int) $validated['item_id']);
         }
         if (! empty($validated['reason'])) {
-            $query->where('reason', (string) $validated['reason']);
+            $reasons = array_map('trim', explode(',', $validated['reason']));
+            $query->whereIn('reason', $reasons);
         }
         if (! empty($validated['from'])) {
             $query->whereDate('created_at', '>=', $validated['from']);

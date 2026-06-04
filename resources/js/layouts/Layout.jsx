@@ -457,7 +457,7 @@ const Layout = () => {
                                         return (
                                             <div key={r.id} className="p-4 bg-white border border-zinc-100 rounded-2xl shadow-sm">
                                                 <div className="font-medium text-sm text-[#818181]">{r?.cashier?.name || 'Cashier'}</div>
-                                                <div className="text-xs text-[#a6a6a6] mt-1">{r.created_at ? new Date(r.created_at).toLocaleTimeString() : ''}</div>
+                                                <div className="text-xs text-[#a6a6a6] mt-1">{r.created_at ? `${new Date(r.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${new Date(r.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}` : ''}</div>
                                                 <div className="mt-3 pt-3 border-t border-zinc-50 flex items-center justify-between">
                                                     {approved ? (
                                                         <span className="font-mono font-medium text-[#818181] bg-[#dddddd] px-2 py-1 rounded">{r.otp}</span>
@@ -490,7 +490,7 @@ const Layout = () => {
                                             <div className="text-xs text-[#a6a6a6] mt-0.5">
                                                 {e?.event_type === 'inventory_access_session_granted' ? 'Access granted' : 'Access ended'}
                                                 <span className="mx-2">{'\u2022'}</span>
-                                                {e.created_at ? new Date(e.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''}
+                                                {e.created_at ? `${new Date(e.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}, ${new Date(e.created_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}` : ''}
                                             </div>
                                         </div>
                                     ))}

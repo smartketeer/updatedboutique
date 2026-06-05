@@ -222,31 +222,44 @@ const CartPanel = ({
                     </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 mb-3">
+                <div className="grid grid-cols-3 gap-2 mb-3">
                     {[
-                        { key: 'cash', label: 'Cash', icon: Receipt },
-                        { key: 'gcash', label: 'GCash', icon: CreditCard },
+                        { key: 'cash', label: 'Cash', icon: Receipt, activeColor: 'green' },
+                        { key: 'gcash', label: 'GCash', icon: CreditCard, activeColor: 'blue' },
+                        { key: 'maya', label: 'Maya', icon: CreditCard, activeColor: 'violet' },
                     ].map((m) => {
                         const Icon = m.icon;
                         const active = paymentMethod === m.key;
-                        const isCash = m.key === 'cash';
-                        const isGcash = m.key === 'gcash';
+                        const colorMap = {
+                            green: {
+                                active: 'border-green-600 text-green-600',
+                                hover: 'hover:border-green-300 hover:text-green-600 hover:bg-green-50/50',
+                                icon: active ? 'text-green-600' : 'text-[#cbcbcb] group-hover:text-green-500',
+                            },
+                            blue: {
+                                active: 'border-blue-600 text-blue-600',
+                                hover: 'hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50/50',
+                                icon: active ? 'text-blue-600' : 'text-[#cbcbcb] group-hover:text-blue-500',
+                            },
+                            violet: {
+                                active: 'border-violet-600 text-violet-600',
+                                hover: 'hover:border-violet-300 hover:text-violet-600 hover:bg-violet-50/50',
+                                icon: active ? 'text-violet-600' : 'text-[#cbcbcb] group-hover:text-violet-500',
+                            },
+                        };
+                        const c = colorMap[m.activeColor];
                         return (
                             <button
                                 key={m.key}
                                 type="button"
                                 onClick={() => setPaymentMethod(m.key)}
-                                className={`group h-10 rounded-xl text-[12px] font-medium inline-flex items-center justify-center gap-2 transition-all border-2 ${
+                                className={`group h-10 rounded-xl text-[12px] font-medium inline-flex items-center justify-center gap-2 transition-all border-2 bg-white ${
                                     active
-                                        ? isCash
-                                            ? 'bg-white border-green-600 text-green-600 shadow-sm'
-                                            : 'bg-white border-blue-600 text-blue-600 shadow-sm'
-                                        : isCash
-                                            ? 'bg-white border-zinc-100 text-[#a6a6a6] hover:border-green-300 hover:text-green-600 hover:bg-green-50/50'
-                                            : 'bg-white border-zinc-100 text-[#a6a6a6] hover:border-blue-300 hover:text-blue-600 hover:bg-blue-50/50'
+                                        ? `${c.active} shadow-sm`
+                                        : `border-zinc-100 text-[#a6a6a6] ${c.hover}`
                                 }`}
                             >
-                                <Icon size={14} className={active ? (isCash ? 'text-green-600' : 'text-blue-600') : (isCash ? 'text-[#cbcbcb] group-hover:text-green-500' : 'text-[#cbcbcb] group-hover:text-blue-500')} />
+                                <Icon size={14} className={c.icon} />
                                 {m.label}
                             </button>
                         );
@@ -312,6 +325,8 @@ const POSTerminal = () => {
     const [stockNotice, setStockNotice] = useState('');
     const [isGcashModalOpen, setIsGcashModalOpen] = useState(false);
     const [gcashReference, setGcashReference] = useState('');
+    const [isMayaModalOpen, setIsMayaModalOpen] = useState(false);
+    const [mayaReference, setMayaReference] = useState('');
     const [mockupOverlayUrl, setMockupOverlayUrl] = useState('');
     const [mockupOpacity, setMockupOpacity] = useState(0.55);
     const [stockById, setStockById] = useState({});
@@ -685,6 +700,10 @@ const POSTerminal = () => {
             setIsGcashModalOpen(true);
             return;
         }
+        if (method === 'maya' && (!referenceNumber || !/^\d{4}$/.test(referenceNumber))) {
+            setIsMayaModalOpen(true);
+            return;
+        }
         try {
             const res = await axios.post('/api/sales', {
                 customer_type: customerType,
@@ -718,6 +737,7 @@ const POSTerminal = () => {
             setCustomerType('walk_in');
             setDiscount(0);
             setGcashReference('');
+            setMayaReference('');
             setIsCartOpen(false);
             clearOverrideAuth();
             try {
@@ -1340,6 +1360,50 @@ const POSTerminal = () => {
                                             }}
                                             disabled={gcashReference.length !== 4}
                                             className="w-full py-3 bg-[#007DFE] text-white rounded-xl font-semibold text-sm uppercase tracking-wider hover:bg-[#0069cc] transition-all disabled:opacity-50 disabled:hover:bg-[#007DFE]"
+                                        >
+                                            Submit & Pay
+                                        </button>
+                                    </div>
+                                </Dialog.Panel>
+                            </Transition.Child>
+                        </div>
+                    </div>
+                </Dialog>
+            </Transition>
+
+            {/* Maya Reference Modal */}
+            <Transition appear show={isMayaModalOpen} as={Fragment}>
+                <Dialog as="div" className="relative z-[100]" onClose={() => setIsMayaModalOpen(false)}>
+                    <Transition.Child as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-200" leaveFrom="opacity-100" leaveTo="opacity-0">
+                        <button type="button" className="fixed inset-0 bg-[#818181]/40 backdrop-blur-md" onClick={() => setIsMayaModalOpen(false)} aria-label="Close Maya modal" />
+                    </Transition.Child>
+                    <div className="fixed inset-0 overflow-y-auto">
+                        <div className="flex min-h-full items-center justify-center p-4">
+                            <Transition.Child as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0 scale-95" enterTo="opacity-100 scale-100" leave="ease-in duration-200" leaveFrom="opacity-100 scale-100" leaveTo="opacity-0 scale-95">
+                                <Dialog.Panel className="w-full max-w-sm transform overflow-hidden rounded-3xl bg-white p-6 shadow-2xl transition-all border border-zinc-100">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <Dialog.Title as="h3" className="text-xl font-semibold text-[#818181] tracking-tight">Maya Reference</Dialog.Title>
+                                        <button onClick={() => setIsMayaModalOpen(false)} className="p-2 hover:bg-[#dddddd] rounded-full transition-colors text-[#a6a6a6]"><X size={20} /></button>
+                                    </div>
+                                    <p className="text-sm text-[#a6a6a6] mb-4">Please enter the last 4 digits of the Maya reference number to proceed.</p>
+                                    <div className="space-y-4">
+                                        <input
+                                            type="text"
+                                            maxLength={4}
+                                            placeholder="e.g. 1234"
+                                            value={mayaReference}
+                                            onChange={(e) => setMayaReference(e.target.value.replace(/\D/g, ''))}
+                                            className="w-full px-4 py-3 text-center text-2xl font-bold tracking-[0.5em] text-[#818181] border border-[#cbcbcb] rounded-xl focus:outline-none focus:ring-2 focus:ring-violet-500/50 focus:border-violet-500 bg-white transition-colors"
+                                        />
+                                        <button
+                                            onClick={() => {
+                                                if (mayaReference.length === 4) {
+                                                    setIsMayaModalOpen(false);
+                                                    handleCheckout('maya', mayaReference);
+                                                }
+                                            }}
+                                            disabled={mayaReference.length !== 4}
+                                            className="w-full py-3 bg-violet-600 text-white rounded-xl font-semibold text-sm uppercase tracking-wider hover:bg-violet-700 transition-all disabled:opacity-50 disabled:hover:bg-violet-600"
                                         >
                                             Submit & Pay
                                         </button>

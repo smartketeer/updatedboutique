@@ -128,6 +128,7 @@ const CashierHistory = () => {
                             <option value="all">All Payment Methods</option>
                             <option value="cash">Cash</option>
                             <option value="gcash">GCash</option>
+                            <option value="maya">Maya</option>
                         </select>
                     </div>
                 </div>
@@ -182,7 +183,7 @@ const CashierHistory = () => {
                                             </td>
                                             <td className="px-6 py-3 text-[#a6a6a6] font-medium">
                                                 <span className="capitalize">{sale.payment_method}</span>
-                                                {sale.payment_method === 'gcash' && sale.reference_number && (
+                                                {(sale.payment_method === 'gcash' || sale.payment_method === 'maya') && sale.reference_number && (
                                                     <span className="text-[10px] ml-1 bg-[#dddddd] px-1.5 py-0.5 rounded-md text-[#818181]">
                                                         {sale.reference_number}
                                                     </span>

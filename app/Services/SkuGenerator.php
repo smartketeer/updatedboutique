@@ -86,25 +86,33 @@ class SkuGenerator
 
     private static function getNextSequenceNumber(string $categoryCode): int
     {
-        // Find the highest existing sequence number for this category
+        // Collect all existing sequence numbers for this category
         $pattern = "{$categoryCode}-%";
-        $lastItem = Item::where('sku', 'LIKE', $pattern)
-            ->orderBy('id', 'desc')
-            ->first();
+        $existingNumbers = Item::where('sku', 'LIKE', $pattern)
+            ->pluck('sku')
+            ->map(function ($sku) {
+                $skuParts = explode('-', $sku);
+                $lastPart = end($skuParts);
+                if (preg_match('/^\d{4}$/', $lastPart)) {
+                    return (int)$lastPart;
+                }
+                return null;
+            })
+            ->filter()
+            ->flip()
+            ->toArray();
         
-        if (!$lastItem || empty($lastItem->sku)) {
-            return 1;
+        // Generate random number between 1 and 9999 that's not in existingNumbers
+        $maxAttempts = 1000;
+        for ($i = 0; $i < $maxAttempts; $i++) {
+            $randomNumber = random_int(1, 9999);
+            if (!isset($existingNumbers[$randomNumber])) {
+                return $randomNumber;
+            }
         }
 
-        // Extract the last 4 digits from SKU
-        $skuParts = explode('-', $lastItem->sku);
-        $lastPart = end($skuParts);
-        
-        if (preg_match('/^\d{4}$/', $lastPart)) {
-            return (int)$lastPart + 1;
-        }
-
-        return 1;
+        // Fallback if all numbers are taken (unlikely)
+        return random_int(1, 9999);
     }
 
     public static function validate(string $sku): bool

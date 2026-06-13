@@ -99,23 +99,33 @@ const StockManagement = () => {
         return code;
     };
 
-    // Get next sequence number
+    // Get unique random 4-digit number
     const getNextSequenceNumber = (categoryCode) => {
         const pattern = `${categoryCode}-`;
-        const matchingItems = items.filter(item => item.sku && item.sku.startsWith(pattern));
-        if (matchingItems.length === 0) return 1;
+        const existingNumbers = new Set();
         
-        let maxNumber = 0;
-        matchingItems.forEach(item => {
-            const skuParts = item.sku.split('-');
-            const lastPart = skuParts[skuParts.length - 1];
-            if (/^\d{4}$/.test(lastPart)) {
-                const num = parseInt(lastPart, 10);
-                if (num > maxNumber) maxNumber = num;
+        // Collect all existing sequence numbers for this category
+        items.forEach(item => {
+            if (item.sku && item.sku.startsWith(pattern)) {
+                const skuParts = item.sku.split('-');
+                const lastPart = skuParts[skuParts.length - 1];
+                if (/^\d{4}$/.test(lastPart)) {
+                    existingNumbers.add(parseInt(lastPart, 10));
+                }
             }
         });
         
-        return maxNumber + 1;
+        // Generate random number between 1 and 9999 that's not in existingNumbers
+        let randomNumber;
+        const maxAttempts = 1000;
+        for (let i = 0; i < maxAttempts; i++) {
+            randomNumber = Math.floor(Math.random() * 9999) + 1; // 1 to 9999
+            if (!existingNumbers.has(randomNumber)) {
+                break;
+            }
+        }
+        
+        return randomNumber;
     };
 
     // Auto-generate SKU when name or category changes

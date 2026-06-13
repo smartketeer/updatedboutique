@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\SkuAuditLog;
 use App\Services\SkuGenerator;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;

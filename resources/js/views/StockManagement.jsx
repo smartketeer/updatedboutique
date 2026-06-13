@@ -66,6 +66,71 @@ const StockManagement = () => {
         stock: '',
         is_service: false,
     });
+
+    // Category name to code mapping
+    const categoryCodeMap = {
+        'Beauty & Personal Care': 'BTY',
+        'School & Office Supplies': 'SCH',
+        'Apparel & Fashion': 'APP',
+        'Footwear': 'FTW',
+    };
+
+    // Extract name parts (first 3 letters of each word)
+    const extractNameParts = (name) => {
+        const cleanName = name.replace(/[^A-Za-z0-9\s]/g, '');
+        const words = cleanName.trim().split(/\s+/).filter(Boolean);
+        const parts = words.slice(0, 3).map(word => word.substring(0, 3).toUpperCase());
+        return parts;
+    };
+
+    // Get category code from category id
+    const getCategoryCode = (categoryId) => {
+        const category = categories.find(cat => String(cat.id) === String(categoryId));
+        if (!category) return 'GEN';
+        
+        const categoryName = category.name.trim();
+        if (categoryCodeMap[categoryName]) {
+            return categoryCodeMap[categoryName];
+        }
+        
+        // Fallback: generate 3-letter code from category name
+        const cleanCatName = categoryName.replace(/[^A-Za-z0-9]/g, '');
+        const code = cleanCatName.substring(0, 3).toUpperCase().padEnd(3, 'X');
+        return code;
+    };
+
+    // Get next sequence number
+    const getNextSequenceNumber = (categoryCode) => {
+        const pattern = `${categoryCode}-`;
+        const matchingItems = items.filter(item => item.sku && item.sku.startsWith(pattern));
+        if (matchingItems.length === 0) return 1;
+        
+        let maxNumber = 0;
+        matchingItems.forEach(item => {
+            const skuParts = item.sku.split('-');
+            const lastPart = skuParts[skuParts.length - 1];
+            if (/^\d{4}$/.test(lastPart)) {
+                const num = parseInt(lastPart, 10);
+                if (num > maxNumber) maxNumber = num;
+            }
+        });
+        
+        return maxNumber + 1;
+    };
+
+    // Auto-generate SKU when name or category changes
+    useEffect(() => {
+        if (newItem.name && newItem.category_id) {
+            const categoryCode = getCategoryCode(newItem.category_id);
+            const nameParts = extractNameParts(newItem.name);
+            const itemSlug = nameParts.join('-');
+            const sequenceNumber = getNextSequenceNumber(categoryCode);
+            const sku = `${categoryCode}-${itemSlug}-${String(sequenceNumber).padStart(4, '0')}`;
+            setNewItem(prev => ({ ...prev, sku }));
+        } else {
+            setNewItem(prev => ({ ...prev, sku: '' }));
+        }
+    }, [newItem.name, newItem.category_id, categories, items]);
     const [newCategory, setNewCategory] = useState({
         name: '',
         type: 'product',
@@ -899,12 +964,13 @@ const StockManagement = () => {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-semibold text-[#a6a6a6] uppercase tracking-widest mb-1">SKU (optional)</label>
+                                            <label className="block text-xs font-semibold text-[#a6a6a6] uppercase tracking-widest mb-1">SKU</label>
                                             <input
                                                 type="text"
+                                                required
+                                                readOnly
                                                 value={newItem.sku}
-                                                onChange={(e) => setNewItem({ ...newItem, sku: e.target.value })}
-                                                className="w-full px-4 py-2 border border-[#19140035] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#818181]/10 text-sm font-medium"
+                                                className="w-full px-4 py-2 border border-[#19140035] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#818181]/10 text-sm font-medium bg-gray-50"
                                             />
                                         </div>
                                         <div>

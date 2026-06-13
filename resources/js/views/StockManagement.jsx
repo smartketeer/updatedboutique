@@ -1,7 +1,7 @@
 import React, { Fragment, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { Dialog, Transition, Menu } from '@headlessui/react';
-import { ArrowDownCircle, ArrowUpCircle, Edit3, ShoppingBag, Plus, X, Package, Search, Save, Pencil } from 'lucide-react';
+import { ArrowDownCircle, ArrowUpCircle, Edit3, ShoppingBag, Plus, X, Package, Search, Save, Pencil, Trash2 } from 'lucide-react';
 
 const PESO = '\u20B1';
 const EM_DASH = '\u2014';
@@ -41,6 +41,11 @@ const StockManagement = () => {
     const [editingItemId, setEditingItemId] = useState(null);
     const [editForm, setEditForm] = useState({ name: '', price: '', cost: '' });
     const [adjustSaving, setAdjustSaving] = useState(false);
+
+    // Multi-delete state
+    const [deleteMode, setDeleteMode] = useState(false);
+    const [selectedItems, setSelectedItems] = useState(new Set());
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const [categories, setCategories] = useState([]);
     const categoriesForSelect = useMemo(
@@ -270,6 +275,46 @@ const StockManagement = () => {
         }
     };
 
+    const toggleDeleteMode = () => {
+        setDeleteMode((v) => !v);
+        setSelectedItems(new Set());
+        cancelEdit();
+    };
+
+    const toggleSelectItem = (id) => {
+        setSelectedItems((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedItems.size === adjustFilteredItems.length && adjustFilteredItems.length > 0) {
+            setSelectedItems(new Set());
+        } else {
+            setSelectedItems(new Set(adjustFilteredItems.map((it) => it.id)));
+        }
+    };
+
+    const confirmBulkDelete = async () => {
+        if (selectedItems.size === 0) return;
+        const count = selectedItems.size;
+        if (!window.confirm(`Delete ${count} item${count > 1 ? 's' : ''}? This cannot be undone.`)) return;
+        setIsDeleting(true);
+        try {
+            await axios.post('/api/stock-management/items/bulk-delete', { ids: Array.from(selectedItems) });
+            setSelectedItems(new Set());
+            setDeleteMode(false);
+            await loadCatalog(branchId);
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to delete items.');
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
     const tabConfig = [
         { key: 'receipt', label: 'Stock In', icon: ArrowDownCircle, helper: 'Record stocks bought or received from supplier.' },
         { key: 'issue', label: 'Stock Out', icon: ArrowUpCircle, helper: 'Record stock used, transferred, or dispatched.' },
@@ -401,41 +446,120 @@ const StockManagement = () => {
                 {tab === 'adjust' ? (
                 <div className="p-5">
                     <div className="rounded-2xl border border-[#cbcbcb] bg-white overflow-hidden">
+                        {/* Header row: title + search + delete toggle */}
                         <div className="px-4 py-3 border-b border-[#cbcbcb] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <div className="text-sm font-semibold text-[#818181]">Adjust Product Details</div>
-                            <div className="relative w-full sm:w-72">
-                                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#a6a6a6]" />
-                                <input type="text" value={adjustSearch} onChange={(e) => setAdjustSearch(e.target.value)} placeholder="Search by name or SKU…" className="w-full pl-9 pr-3 py-2 border border-[#cbcbcb] rounded-xl text-sm font-medium text-[#818181] bg-white" />
+                            <div className="flex items-center gap-2 w-full sm:w-auto">
+                                <div className="relative flex-1 sm:w-72">
+                                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#a6a6a6]" />
+                                    <input
+                                        id="adjust-search"
+                                        type="text"
+                                        value={adjustSearch}
+                                        onChange={(e) => setAdjustSearch(e.target.value)}
+                                        placeholder="Search by name or SKU…"
+                                        className="w-full pl-9 pr-3 py-2 border border-[#cbcbcb] rounded-xl text-sm font-medium text-[#818181] bg-white"
+                                    />
+                                </div>
+                                <button
+                                    id="adjust-delete-mode-btn"
+                                    type="button"
+                                    onClick={toggleDeleteMode}
+                                    title={deleteMode ? 'Cancel deletion' : 'Select items to delete'}
+                                    className={`flex-shrink-0 h-9 px-3 rounded-xl border text-xs font-semibold inline-flex items-center gap-1.5 transition-colors ${
+                                        deleteMode
+                                            ? 'border-red-300 bg-red-50 text-red-600 hover:bg-red-100'
+                                            : 'border-[#cbcbcb] bg-white text-[#818181] hover:bg-[#dddddd]'
+                                    }`}
+                                >
+                                    {deleteMode ? <X size={14} /> : <Trash2 size={14} />}
+                                    {deleteMode ? 'Cancel' : 'Delete'}
+                                </button>
                             </div>
                         </div>
+
+                        {/* Delete mode action banner */}
+                        {deleteMode && (
+                            <div className="px-4 py-2.5 bg-red-50 border-b border-red-100 flex items-center justify-between gap-3">
+                                <span className="text-xs font-semibold text-red-600">
+                                    {selectedItems.size === 0
+                                        ? 'Check items to select them for deletion'
+                                        : `${selectedItems.size} item${selectedItems.size > 1 ? 's' : ''} selected`}
+                                </span>
+                                <button
+                                    id="adjust-confirm-delete-btn"
+                                    type="button"
+                                    onClick={confirmBulkDelete}
+                                    disabled={selectedItems.size === 0 || isDeleting}
+                                    className="h-8 px-4 rounded-lg bg-red-600 text-white text-xs font-semibold hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-1.5 transition-colors"
+                                >
+                                    <Trash2 size={13} />
+                                    {isDeleting ? 'Deleting…' : `Delete ${selectedItems.size > 0 ? selectedItems.size : ''}`}
+                                </button>
+                            </div>
+                        )}
+
                         <div className="overflow-auto" style={{maxHeight:'calc(100vh - 22rem)'}}>
                             <table className="w-full text-left">
                                 <thead className="sticky top-0 bg-white z-10">
                                     <tr className="text-[#a6a6a6] text-xs font-semibold uppercase tracking-widest border-b border-[#cbcbcb]">
+                                        {deleteMode && (
+                                            <th className="pl-4 py-3 w-10">
+                                                <input
+                                                    id="adjust-select-all"
+                                                    type="checkbox"
+                                                    checked={adjustFilteredItems.length > 0 && selectedItems.size === adjustFilteredItems.length}
+                                                    onChange={toggleSelectAll}
+                                                    className="w-4 h-4 rounded border-[#cbcbcb] accent-red-600 cursor-pointer"
+                                                    title="Select all visible"
+                                                />
+                                            </th>
+                                        )}
                                         <th className="px-4 py-3">Product Name</th>
                                         <th className="px-4 py-3">SKU</th>
                                         <th className="px-4 py-3">Capital Price</th>
                                         <th className="px-4 py-3">Selling Price</th>
-                                        <th className="px-4 py-3 text-right">Actions</th>
+                                        {!deleteMode && <th className="px-4 py-3 text-right">Actions</th>}
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-[#cbcbcb]">
                                     {itemsLoading ? (
                                         Array.from({length:8}).map((_,i) => (
-                                            <tr key={`adj-skel-${i}`}><td className="px-4 py-3" colSpan={5}><div className="h-4 w-full bg-zinc-200 rounded animate-pulse" /></td></tr>
+                                            <tr key={`adj-skel-${i}`}><td className="px-4 py-3" colSpan={deleteMode ? 5 : 5}><div className="h-4 w-full bg-zinc-200 rounded animate-pulse" /></td></tr>
                                         ))
                                     ) : adjustFilteredItems.length === 0 ? (
-                                        <tr><td colSpan={5} className="px-4 py-10 text-center text-sm font-medium text-[#a6a6a6]">No items found.</td></tr>
+                                        <tr><td colSpan={deleteMode ? 5 : 5} className="px-4 py-10 text-center text-sm font-medium text-[#a6a6a6]">No items found.</td></tr>
                                     ) : (
                                         adjustFilteredItems.map((it) => {
-                                            const isEditing = editingItemId === it.id;
+                                            const isEditing = !deleteMode && editingItemId === it.id;
+                                            const isChecked = selectedItems.has(it.id);
                                             return (
-                                                <tr key={it.id} className="hover:bg-[#dddddd] transition-colors">
+                                                <tr
+                                                    key={it.id}
+                                                    onClick={deleteMode ? () => toggleSelectItem(it.id) : undefined}
+                                                    className={`transition-colors ${
+                                                        deleteMode
+                                                            ? isChecked
+                                                                ? 'bg-red-50 hover:bg-red-100 cursor-pointer'
+                                                                : 'hover:bg-red-50 cursor-pointer'
+                                                            : 'hover:bg-[#dddddd]'
+                                                    }`}
+                                                >
+                                                    {deleteMode && (
+                                                        <td className="pl-4 py-3 w-10" onClick={(e) => e.stopPropagation()}>
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={isChecked}
+                                                                onChange={() => toggleSelectItem(it.id)}
+                                                                className="w-4 h-4 rounded border-[#cbcbcb] accent-red-600 cursor-pointer"
+                                                            />
+                                                        </td>
+                                                    )}
                                                     <td className="px-4 py-3">
                                                         {isEditing ? (
                                                             <input type="text" value={editForm.name} onChange={(e) => setEditForm({...editForm, name: e.target.value})} className="w-full px-2 py-1.5 border border-[#cbcbcb] rounded-lg text-sm font-medium" />
                                                         ) : (
-                                                            <span className="text-sm font-semibold text-[#818181]">{it.name}</span>
+                                                            <span className={`text-sm font-semibold ${deleteMode && isChecked ? 'text-red-600 line-through' : 'text-[#818181]'}`}>{it.name}</span>
                                                         )}
                                                     </td>
                                                     <td className="px-4 py-3 text-xs font-medium text-[#a6a6a6]">{it.sku || EM_DASH}</td>
@@ -453,20 +577,22 @@ const StockManagement = () => {
                                                             <span className="text-sm font-medium text-[#818181]">{PESO}{Number(it.price||0).toLocaleString()}</span>
                                                         )}
                                                     </td>
-                                                    <td className="px-4 py-3 text-right">
-                                                        {isEditing ? (
-                                                            <div className="flex items-center justify-end gap-2">
-                                                                <button type="button" onClick={() => saveAdjust(it.id)} disabled={adjustSaving} className="px-3 py-1.5 bg-[#818181] text-white text-xs font-semibold rounded-lg hover:bg-[#6a6a6a] disabled:opacity-50">
-                                                                    {adjustSaving ? 'Saving…' : 'Save'}
+                                                    {!deleteMode && (
+                                                        <td className="px-4 py-3 text-right">
+                                                            {isEditing ? (
+                                                                <div className="flex items-center justify-end gap-2">
+                                                                    <button type="button" onClick={() => saveAdjust(it.id)} disabled={adjustSaving} className="px-3 py-1.5 bg-[#818181] text-white text-xs font-semibold rounded-lg hover:bg-[#6a6a6a] disabled:opacity-50">
+                                                                        {adjustSaving ? 'Saving…' : 'Save'}
+                                                                    </button>
+                                                                    <button type="button" onClick={cancelEdit} className="px-3 py-1.5 border border-[#cbcbcb] text-xs font-semibold rounded-lg hover:bg-[#dddddd]">Cancel</button>
+                                                                </div>
+                                                            ) : (
+                                                                <button type="button" onClick={() => startEdit(it)} className="px-3 py-1.5 border border-[#cbcbcb] text-xs font-semibold rounded-lg hover:bg-[#dddddd] inline-flex items-center gap-1">
+                                                                    <Pencil size={12} /> Edit
                                                                 </button>
-                                                                <button type="button" onClick={cancelEdit} className="px-3 py-1.5 border border-[#cbcbcb] text-xs font-semibold rounded-lg hover:bg-[#dddddd]">Cancel</button>
-                                                            </div>
-                                                        ) : (
-                                                            <button type="button" onClick={() => startEdit(it)} className="px-3 py-1.5 border border-[#cbcbcb] text-xs font-semibold rounded-lg hover:bg-[#dddddd] inline-flex items-center gap-1">
-                                                                <Pencil size={12} /> Edit
-                                                            </button>
-                                                        )}
-                                                    </td>
+                                                            )}
+                                                        </td>
+                                                    )}
                                                 </tr>
                                             );
                                         })

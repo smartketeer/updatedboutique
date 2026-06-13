@@ -87,6 +87,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/stock-management/items', [StockCatalogController::class, 'storeItem']);
         Route::put('/stock-management/items/{item}', [StockCatalogController::class, 'updateItem']);
         Route::delete('/stock-management/items/{item}', [StockCatalogController::class, 'destroyItem']);
+        Route::post('/stock-management/items/bulk-delete', [StockCatalogController::class, 'destroyItems']);
         Route::post('/stock-management/categories', [StockCatalogController::class, 'storeCategory']);
 
         // Stock Import (moved from Inventory module)

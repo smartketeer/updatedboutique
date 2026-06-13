@@ -180,6 +180,38 @@ class StockCatalogController extends Controller
         return response()->json(null, 204);
     }
 
+    public function destroyItems(Request $request)
+    {
+        $validated = $request->validate([
+            'ids'   => 'required|array|min:1',
+            'ids.*' => 'required|integer|exists:items,id',
+        ]);
+
+        $ids = array_unique(array_map('intval', $validated['ids']));
+        $items = Item::whereIn('id', $ids)->get();
+
+        DB::transaction(function () use ($items, $request) {
+            foreach ($items as $item) {
+                $item->delete();
+                ActivityLog::create([
+                    'actor_user_id' => $request->user()?->id,
+                    'event_type'    => 'catalog_item_deleted',
+                    'description'   => 'Deleted a catalog item (bulk).',
+                    'metadata'      => [
+                        'item_id'     => $item->id,
+                        'sku'         => $item->sku,
+                        'name'        => $item->name,
+                        'category_id' => $item->category_id,
+                    ],
+                    'ip_address' => $request->ip(),
+                    'user_agent' => $request->userAgent(),
+                ]);
+            }
+        });
+
+        return response()->json(['deleted' => count($items)], 200);
+    }
+
     public function storeCategory(Request $request)
     {
         $validated = $request->validate([

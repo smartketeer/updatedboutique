@@ -481,21 +481,39 @@ const StockManagement = () => {
                         {/* Delete mode action banner */}
                         {deleteMode && (
                             <div className="px-4 py-2.5 bg-red-50 border-b border-red-100 flex items-center justify-between gap-3">
-                                <span className="text-xs font-semibold text-red-600">
+                                <span className="text-xs font-semibold text-red-600 min-w-0">
                                     {selectedItems.size === 0
-                                        ? 'Check items to select them for deletion'
-                                        : `${selectedItems.size} item${selectedItems.size > 1 ? 's' : ''} selected`}
+                                        ? 'Tap items to mark for deletion'
+                                        : `${selectedItems.size} of ${adjustFilteredItems.length} selected`}
                                 </span>
-                                <button
-                                    id="adjust-confirm-delete-btn"
-                                    type="button"
-                                    onClick={confirmBulkDelete}
-                                    disabled={selectedItems.size === 0 || isDeleting}
-                                    className="h-8 px-4 rounded-lg bg-red-600 text-white text-xs font-semibold hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-1.5 transition-colors"
-                                >
-                                    <Trash2 size={13} />
-                                    {isDeleting ? 'Deleting…' : `Delete ${selectedItems.size > 0 ? selectedItems.size : ''}`}
-                                </button>
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedItems(new Set(adjustFilteredItems.map((it) => it.id)))}
+                                        className="h-7 px-3 rounded-full border border-red-200 bg-white text-[11px] font-semibold text-red-600 hover:bg-red-100 transition-colors"
+                                    >
+                                        Select All
+                                    </button>
+                                    {selectedItems.size > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setSelectedItems(new Set())}
+                                            className="h-7 px-3 rounded-full border border-red-200 bg-white text-[11px] font-semibold text-red-600 hover:bg-red-100 transition-colors"
+                                        >
+                                            Clear Selection
+                                        </button>
+                                    )}
+                                    <button
+                                        id="adjust-confirm-delete-btn"
+                                        type="button"
+                                        onClick={confirmBulkDelete}
+                                        disabled={selectedItems.size === 0 || isDeleting}
+                                        className="h-7 px-4 rounded-full bg-red-600 text-white text-[11px] font-semibold hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center gap-1.5 transition-colors"
+                                    >
+                                        <Trash2 size={12} />
+                                        {isDeleting ? 'Deleting…' : `Delete${selectedItems.size > 0 ? ` (${selectedItems.size})` : ''}`}
+                                    </button>
+                                </div>
                             </div>
                         )}
 
@@ -504,24 +522,7 @@ const StockManagement = () => {
                                 <thead className="sticky top-0 bg-white z-10">
                                     <tr className="text-[#a6a6a6] text-xs font-semibold uppercase tracking-widest border-b border-[#cbcbcb]">
                                         {deleteMode && (
-                                            <th className="pl-4 py-3 w-24">
-                                                <div className="flex flex-col gap-1 items-start normal-case tracking-normal">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setSelectedItems(new Set(adjustFilteredItems.map((it) => it.id)))}
-                                                        className="text-[11px] font-semibold text-[#818181] hover:text-red-600 hover:underline transition-colors"
-                                                    >
-                                                        Select All
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setSelectedItems(new Set())}
-                                                        className="text-[11px] font-semibold text-[#818181] hover:text-red-600 hover:underline transition-colors"
-                                                    >
-                                                        Unselect All
-                                                    </button>
-                                                </div>
-                                            </th>
+                                            <th className="pl-4 py-3 w-10"></th>
                                         )}
                                         <th className="px-4 py-3">Product Name</th>
                                         <th className="px-4 py-3">SKU</th>

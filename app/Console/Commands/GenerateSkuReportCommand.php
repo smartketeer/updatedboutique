@@ -6,6 +6,7 @@ use App\Models\Item;
 use App\Models\SkuAuditLog;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 
 class GenerateSkuReportCommand extends Command
 {
@@ -35,7 +36,10 @@ class GenerateSkuReportCommand extends Command
         $this->info("Duplicate SKUs found: " . $duplicateSkus->count());
 
         // 3. Get all backfilled SKUs
-        $backfilledSkus = SkuAuditLog::where('action', 'backfilled')->get();
+        $backfilledSkus = collect();
+        if (Schema::hasTable('sku_audit_logs')) {
+            $backfilledSkus = SkuAuditLog::where('action', 'backfilled')->get();
+        }
 
         // 4. Generate report content
         $reportContent = "=== COMPREHENSIVE SKU REPORT ===\n";

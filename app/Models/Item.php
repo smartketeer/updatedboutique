@@ -7,6 +7,7 @@ use App\Services\SkuGenerator;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 
 #[Fillable(['category_id', 'name', 'sku', 'price', 'cost', 'stock_qty', 'is_service', 'primary_image_id'])]
 class Item extends Model
@@ -24,20 +25,22 @@ class Item extends Model
         });
 
         static::created(function (Item $item) {
-            SkuAuditLog::create([
-                'item_id' => $item->id,
-                'sku' => $item->sku,
-                'action' => 'generated',
-                'user_id' => auth()->id() ?? null,
-                'metadata' => [
-                    'category_id' => $item->category_id,
-                    'name' => $item->name,
-                ],
-            ]);
+            if (Schema::hasTable('sku_audit_logs')) {
+                SkuAuditLog::create([
+                    'item_id' => $item->id,
+                    'sku' => $item->sku,
+                    'action' => 'generated',
+                    'user_id' => auth()->id() ?? null,
+                    'metadata' => [
+                        'category_id' => $item->category_id,
+                        'name' => $item->name,
+                    ],
+                ]);
+            }
         });
 
         static::updated(function (Item $item) {
-            if ($item->isDirty('sku')) {
+            if (Schema::hasTable('sku_audit_logs') && $item->isDirty('sku')) {
                 SkuAuditLog::create([
                     'item_id' => $item->id,
                     'sku' => $item->sku,

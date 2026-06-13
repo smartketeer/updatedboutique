@@ -504,15 +504,23 @@ const StockManagement = () => {
                                 <thead className="sticky top-0 bg-white z-10">
                                     <tr className="text-[#a6a6a6] text-xs font-semibold uppercase tracking-widest border-b border-[#cbcbcb]">
                                         {deleteMode && (
-                                            <th className="pl-4 py-3 w-10">
-                                                <input
-                                                    id="adjust-select-all"
-                                                    type="checkbox"
-                                                    checked={adjustFilteredItems.length > 0 && selectedItems.size === adjustFilteredItems.length}
-                                                    onChange={toggleSelectAll}
-                                                    className="w-4 h-4 rounded border-[#cbcbcb] accent-red-600 cursor-pointer"
-                                                    title="Select all visible"
-                                                />
+                                            <th className="pl-4 py-3 w-24">
+                                                <div className="flex flex-col gap-1 items-start normal-case tracking-normal">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setSelectedItems(new Set(adjustFilteredItems.map((it) => it.id)))}
+                                                        className="text-[11px] font-semibold text-[#818181] hover:text-red-600 hover:underline transition-colors"
+                                                    >
+                                                        Select All
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setSelectedItems(new Set())}
+                                                        className="text-[11px] font-semibold text-[#818181] hover:text-red-600 hover:underline transition-colors"
+                                                    >
+                                                        Unselect All
+                                                    </button>
+                                                </div>
                                             </th>
                                         )}
                                         <th className="px-4 py-3">Product Name</th>

@@ -946,7 +946,12 @@ const Inventory = () => {
                                                             <ImagePlus size={18} />
                                                         )}
                                                     </button>
-                                                    <p className="text-sm font-semibold text-[#818181] leading-none">{item.name}</p>
+                                                    <div>
+                                                        <p className="text-sm font-semibold text-[#818181] leading-none">{item.name}</p>
+                                                        <p className="text-[10px] font-medium text-[#a6a6a6] uppercase tracking-widest mt-1">
+                                                            SKU: {item.sku || EM_DASH}
+                                                        </p>
+                                                    </div>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 text-xs font-medium text-[#a6a6a6]">{item.sku || EM_DASH}</td>

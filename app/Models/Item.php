@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\SkuGenerator;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -10,6 +11,45 @@ use Illuminate\Database\Eloquent\Model;
 class Item extends Model
 {
     use HasFactory;
+
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (Item $item) {
+            if (empty($item->sku)) {
+                $item->sku = SkuGenerator::generate($item);
+            }
+        });
+
+        static::created(function (Item $item) {
+            SkuAuditLog::create([
+                'item_id' => $item->id,
+                'sku' => $item->sku,
+                'action' => 'generated',
+                'user_id' => auth()->id() ?? null,
+                'metadata' => [
+                    'category_id' => $item->category_id,
+                    'name' => $item->name,
+                ],
+            ]);
+        });
+
+        static::updated(function (Item $item) {
+            if ($item->isDirty('sku')) {
+                SkuAuditLog::create([
+                    'item_id' => $item->id,
+                    'sku' => $item->sku,
+                    'action' => 'updated',
+                    'user_id' => auth()->id() ?? null,
+                    'metadata' => [
+                        'old_sku' => $item->getOriginal('sku'),
+                        'new_sku' => $item->sku,
+                    ],
+                ]);
+            }
+        });
+    }
 
     public function category()
     {
@@ -34,5 +74,10 @@ class Item extends Model
     public function primaryImage()
     {
         return $this->belongsTo(ProductImage::class, 'primary_image_id');
+    }
+
+    public function skuAuditLogs()
+    {
+        return $this->hasMany(SkuAuditLog::class);
     }
 }

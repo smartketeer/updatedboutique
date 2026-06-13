@@ -50,7 +50,10 @@ const StockManagement = () => {
 
     const [categories, setCategories] = useState([]);
     const categoriesForSelect = useMemo(
-        () => categories.filter((c) => String(c?.name || '').trim().toLowerCase() !== 'salon services'),
+        () => categories.filter((c) => {
+            const name = String(c?.name || '').trim().toLowerCase();
+            return name !== 'salon services' && name !== 'store services';
+        }),
         [categories],
     );
 

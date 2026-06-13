@@ -8,15 +8,21 @@ use Illuminate\Support\Facades\DB;
 
 class SkuGenerator
 {
-    const ALLOWED_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    const SKU_LENGTH = 16;
     const MAX_ATTEMPTS = 100;
+
+    // Category name to code mapping
+    private static $categoryCodeMap = [
+        'Beauty & Personal Care' => 'BTY',
+        'School & Office Supplies' => 'SCH',
+        'Apparel & Fashion' => 'APP',
+        'Footwear' => 'FTW',
+    ];
 
     public static function generate(Item $item): string
     {
         $attempt = 0;
         do {
-            $sku = self::buildSku($item);
+            $sku = self::buildSku($item, $attempt);
             $exists = Item::where('sku', $sku)->exists();
             $attempt++;
         } while ($exists && $attempt < self::MAX_ATTEMPTS);
@@ -28,34 +34,81 @@ class SkuGenerator
         return $sku;
     }
 
-    private static function buildSku(Item $item): string
+    private static function buildSku(Item $item, int $attempt = 0): string
     {
         $category = Category::find($item->category_id);
-        $categoryCode = $category ? strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $category->name), 0, 3)) : 'GEN';
-        $categoryCode = str_pad($categoryCode, 3, 'X', STR_PAD_RIGHT);
+        
+        // Get category code
+        $categoryCode = 'GEN';
+        if ($category) {
+            $categoryName = trim($category->name);
+            if (isset(self::$categoryCodeMap[$categoryName])) {
+                $categoryCode = self::$categoryCodeMap[$categoryName];
+            } else {
+                // Fallback: generate 3-letter code from category name
+                $categoryCode = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $categoryName), 0, 3));
+                $categoryCode = str_pad($categoryCode, 3, 'X', STR_PAD_RIGHT);
+            }
+        }
 
-        $timestamp = now()->format('YmdHis');
-        $randomString = self::generateRandomString(4);
+        // Generate item parts from name
+        $nameParts = self::extractNameParts($item->name);
+        $itemSlug = implode('-', $nameParts);
 
-        $sku = "{$categoryCode}-{$timestamp}-{$randomString}";
-        return strtoupper(substr($sku, 0, self::SKU_LENGTH));
+        // Get next 4-digit number
+        $nextNumber = self::getNextSequenceNumber($categoryCode);
+        if ($attempt > 0) {
+            $nextNumber += $attempt;
+        }
+        $numberPart = str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+
+        // Build SKU
+        $sku = "{$categoryCode}-{$itemSlug}-{$numberPart}";
+        return strtoupper($sku);
     }
 
-    private static function generateRandomString(int $length): string
+    private static function extractNameParts(string $name): array
     {
-        $characters = self::ALLOWED_CHARS;
-        $charactersLength = strlen($characters);
-        $randomString = '';
-        for ($i = 0; $i < $length; $i++) {
-            $randomString .= $characters[rand(0, $charactersLength - 1)];
+        // Remove special characters, split into words
+        $cleanName = preg_replace('/[^A-Za-z0-9\s]/', '', $name);
+        $words = preg_split('/\s+/', trim($cleanName));
+        
+        $parts = [];
+        foreach ($words as $word) {
+            if (empty($word)) continue;
+            // Take first 3 letters of each word
+            $parts[] = strtoupper(substr($word, 0, 3));
         }
-        return $randomString;
+        
+        // Limit to 3 parts to keep SKU manageable
+        return array_slice($parts, 0, 3);
+    }
+
+    private static function getNextSequenceNumber(string $categoryCode): int
+    {
+        // Find the highest existing sequence number for this category
+        $pattern = "{$categoryCode}-%";
+        $lastItem = Item::where('sku', 'LIKE', $pattern)
+            ->orderBy('id', 'desc')
+            ->first();
+        
+        if (!$lastItem || empty($lastItem->sku)) {
+            return 1;
+        }
+
+        // Extract the last 4 digits from SKU
+        $skuParts = explode('-', $lastItem->sku);
+        $lastPart = end($skuParts);
+        
+        if (preg_match('/^\d{4}$/', $lastPart)) {
+            return (int)$lastPart + 1;
+        }
+
+        return 1;
     }
 
     public static function validate(string $sku): bool
     {
-        return preg_match('/^[A-Z0-9-]+$/', $sku) === 1 && 
-               strlen($sku) <= self::SKU_LENGTH && 
-               !preg_match('/[O0Il]/', $sku);
+        return preg_match('/^[A-Z0-9-]+$/', $sku) === 1;
     }
 }

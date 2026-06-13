@@ -23,7 +23,7 @@ class SkuGenerator
         $attempt = 0;
         do {
             $sku = self::buildSku($item, $attempt);
-            $exists = Item::where('sku', $sku)->exists();
+            $exists = self::skuExists($sku);
             $attempt++;
         } while ($exists && $attempt < self::MAX_ATTEMPTS);
 
@@ -32,6 +32,17 @@ class SkuGenerator
         }
 
         return $sku;
+    }
+
+    private static function skuExists(string $sku): bool
+    {
+        // Check bodega database
+        $existsInBodega = Item::where('sku', $sku)->exists();
+        
+        // Check main POS database
+        $existsInPos = DB::connection('pos')->table('items')->where('sku', $sku)->exists();
+
+        return $existsInBodega || $existsInPos;
     }
 
     private static function buildSku(Item $item, int $attempt = 0): string
@@ -86,9 +97,11 @@ class SkuGenerator
 
     private static function getNextSequenceNumber(string $categoryCode): int
     {
-        // Collect all existing sequence numbers for this category
-        $pattern = "{$categoryCode}-%";
-        $existingNumbers = Item::where('sku', 'LIKE', $pattern)
+        // Collect all existing sequence numbers from BOTH databases for this category
+        $existingNumbers = [];
+
+        // From bodega database
+        $bodegaNumbers = Item::where('sku', 'LIKE', "{$categoryCode}-%")
             ->pluck('sku')
             ->map(function ($sku) {
                 $skuParts = explode('-', $sku);
@@ -101,7 +114,25 @@ class SkuGenerator
             ->filter()
             ->flip()
             ->toArray();
-        
+        $existingNumbers = array_merge($existingNumbers, $bodegaNumbers);
+
+        // From main POS database
+        $posNumbers = DB::connection('pos')->table('items')
+            ->where('sku', 'LIKE', "{$categoryCode}-%")
+            ->pluck('sku')
+            ->map(function ($sku) {
+                $skuParts = explode('-', $sku);
+                $lastPart = end($skuParts);
+                if (preg_match('/^\d{4}$/', $lastPart)) {
+                    return (int)$lastPart;
+                }
+                return null;
+            })
+            ->filter()
+            ->flip()
+            ->toArray();
+        $existingNumbers = array_merge($existingNumbers, $posNumbers);
+
         // Generate random number between 1 and 9999 that's not in existingNumbers
         $maxAttempts = 1000;
         for ($i = 0; $i < $maxAttempts; $i++) {

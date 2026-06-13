@@ -1114,6 +1114,9 @@ const POSTerminal = () => {
                                                     <div className="text-[11px] font-medium text-[#cbcbcb] uppercase tracking-widest truncate mb-1">
                                                         {item.category?.name || 'Uncategorized'}
                                                     </div>
+                                                    <div className="text-[10px] font-medium text-[#a6a6a6] truncate mb-1">
+                                                        SKU: {item.sku || 'N/A'}
+                                                    </div>
                                                     <div className="text-[14px] font-medium text-[#818181] leading-tight mb-2 line-clamp-2">
                                                         {item.name}
                                                     </div>

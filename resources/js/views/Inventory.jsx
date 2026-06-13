@@ -880,6 +880,7 @@ const Inventory = () => {
                         <thead className="sticky top-0 z-10">
                             <tr className="bg-white text-[#a6a6a6] text-xs font-semibold uppercase tracking-widest border-b border-[#cbcbcb]">
                                 <th className="px-6 py-4">Name</th>
+                                <th className="px-6 py-4">SKU</th>
                                 <th className="px-6 py-4">Category</th>
                                 <th className="px-6 py-4">Price</th>
                                 <th className="px-6 py-4">Stock</th>
@@ -898,6 +899,9 @@ const Inventory = () => {
                                                     <div className="h-2 w-28 bg-zinc-200 rounded animate-pulse" />
                                                 </div>
                                             </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="h-4 w-32 bg-zinc-200 rounded animate-pulse" />
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="h-6 w-24 bg-zinc-200 rounded animate-pulse" />
@@ -942,12 +946,10 @@ const Inventory = () => {
                                                             <ImagePlus size={18} />
                                                         )}
                                                     </button>
-                                                    <div>
-                                                        <p className="text-sm font-semibold text-[#818181] leading-none">{item.name}</p>
-                                                        <p className="text-[10px] text-[#a6a6a6] mt-1 font-medium uppercase tracking-tight">SKU: {item.sku || 'N/A'}</p>
-                                                    </div>
+                                                    <p className="text-sm font-semibold text-[#818181] leading-none">{item.name}</p>
                                                 </div>
                                             </td>
+                                            <td className="px-6 py-4 text-xs font-medium text-[#a6a6a6]">{item.sku || EM_DASH}</td>
                                             <td className="px-6 py-4">
                                                 <span className="text-xs font-semibold text-[#3f3f46] px-2.5 py-1 bg-white rounded-md border border-[#cbcbcb] uppercase tracking-tighter">
                                                     {item.category?.name}
@@ -992,7 +994,7 @@ const Inventory = () => {
                             )}
                             {!loading && pagedItems.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-10 text-center text-sm font-medium text-[#a6a6a6]">
+                                    <td colSpan={6} className="px-6 py-10 text-center text-sm font-medium text-[#a6a6a6]">
                                         No items found.
                                     </td>
                                 </tr>

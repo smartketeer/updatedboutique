@@ -921,7 +921,7 @@ const StockManagement = () => {
                                                 <option value="">Select Category</option>
                                                 {categoriesForSelect.map((cat) => (
                                                     <option key={cat.id} value={String(cat.id)}>
-                                                        {cat.name} ({cat.type})
+                                                        {cat.name}
                                                     </option>
                                                 ))}
                                             </select>

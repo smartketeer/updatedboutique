@@ -1,7 +1,7 @@
 import React, { Fragment, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { Dialog, Transition, Menu } from '@headlessui/react';
-import { ArrowDownCircle, ArrowUpCircle, Edit3, ShoppingBag, Plus, X, Package, Search, Save, Pencil, Trash2 } from 'lucide-react';
+import { ArrowDownCircle, ArrowUpCircle, Edit3, ShoppingBag, Plus, X, Package, Search, Save, Pencil, Trash2, AlertTriangle } from 'lucide-react';
 
 const PESO = '\u20B1';
 const EM_DASH = '\u2014';
@@ -46,6 +46,7 @@ const StockManagement = () => {
     const [deleteMode, setDeleteMode] = useState(false);
     const [selectedItems, setSelectedItems] = useState(new Set());
     const [isDeleting, setIsDeleting] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
     const [categories, setCategories] = useState([]);
     const categoriesForSelect = useMemo(
@@ -298,15 +299,18 @@ const StockManagement = () => {
         }
     };
 
-    const confirmBulkDelete = async () => {
+    const confirmBulkDelete = () => {
         if (selectedItems.size === 0) return;
-        const count = selectedItems.size;
-        if (!window.confirm(`Delete ${count} item${count > 1 ? 's' : ''}? This cannot be undone.`)) return;
+        setShowDeleteConfirm(true);
+    };
+
+    const executeBulkDelete = async () => {
         setIsDeleting(true);
         try {
             await axios.post('/api/stock-management/items/bulk-delete', { ids: Array.from(selectedItems) });
             setSelectedItems(new Set());
             setDeleteMode(false);
+            setShowDeleteConfirm(false);
             await loadCatalog(branchId);
         } catch (err) {
             alert(err.response?.data?.message || 'Failed to delete items.');
@@ -1011,6 +1015,79 @@ const StockManagement = () => {
                                             </button>
                                         </div>
                                     </form>
+                                </Dialog.Panel>
+                            </Transition.Child>
+                        </div>
+                    </div>
+                </Dialog>
+            </Transition>
+
+            {/* ── Delete Confirmation Modal ── */}
+            <Transition appear show={showDeleteConfirm} as={Fragment}>
+                <Dialog as="div" className="relative z-50" onClose={() => !isDeleting && setShowDeleteConfirm(false)}>
+                    <Transition.Child
+                        as={Fragment}
+                        enter="ease-out duration-200"
+                        enterFrom="opacity-0"
+                        enterTo="opacity-100"
+                        leave="ease-in duration-150"
+                        leaveFrom="opacity-100"
+                        leaveTo="opacity-0"
+                    >
+                        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
+                    </Transition.Child>
+
+                    <div className="fixed inset-0 overflow-y-auto">
+                        <div className="flex min-h-full items-center justify-center p-4">
+                            <Transition.Child
+                                as={Fragment}
+                                enter="ease-out duration-200"
+                                enterFrom="opacity-0 scale-95"
+                                enterTo="opacity-100 scale-100"
+                                leave="ease-in duration-150"
+                                leaveFrom="opacity-100 scale-100"
+                                leaveTo="opacity-0 scale-95"
+                            >
+                                <Dialog.Panel className="w-full max-w-sm rounded-2xl bg-white shadow-2xl border border-[#cbcbcb] overflow-hidden">
+                                    <div className="flex flex-col items-center px-6 pt-7 pb-2">
+                                        <div className="w-14 h-14 rounded-full bg-red-100 flex items-center justify-center mb-4">
+                                            <AlertTriangle size={28} className="text-red-600" />
+                                        </div>
+                                        <Dialog.Title className="text-lg font-bold text-[#3a3a3a] text-center">
+                                            Confirm Deletion
+                                        </Dialog.Title>
+                                        <p className="mt-2 text-sm text-[#818181] text-center leading-relaxed">
+                                            You are about to delete{' '}
+                                            <span className="font-bold text-red-600">
+                                                {selectedItems.size} item{selectedItems.size > 1 ? 's' : ''}
+                                            </span>{' '}
+                                            from your catalog.
+                                        </p>
+                                        <div className="mt-3 w-full rounded-xl bg-red-50 border border-red-100 px-4 py-3">
+                                            <p className="text-xs font-semibold text-red-600 text-center">
+                                                ⚠ This action is permanent and cannot be undone.
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-3 px-6 pt-5 pb-6">
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowDeleteConfirm(false)}
+                                            disabled={isDeleting}
+                                            className="flex-1 h-11 rounded-xl border border-[#cbcbcb] bg-white text-sm font-semibold text-[#818181] hover:bg-[#dddddd] disabled:opacity-50 transition-colors"
+                                        >
+                                            Go Back
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={executeBulkDelete}
+                                            disabled={isDeleting}
+                                            className="flex-1 h-11 rounded-xl bg-red-600 text-white text-sm font-semibold hover:bg-red-700 disabled:opacity-60 inline-flex items-center justify-center gap-2 transition-colors"
+                                        >
+                                            <Trash2 size={14} />
+                                            {isDeleting ? 'Deleting…' : 'Yes, Delete'}
+                                        </button>
+                                    </div>
                                 </Dialog.Panel>
                             </Transition.Child>
                         </div>

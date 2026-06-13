@@ -33,7 +33,7 @@ class SyncInventoryCommand extends Command
 
     private function syncToBodega(): void
     {
-        $this->info("Syncing FROM main POS TO bodega...");
+        $this->info("Syncing FROM main POS TO bodega (matching by SKU)...");
         $count = 0;
 
         // Get all items from main POS
@@ -54,7 +54,7 @@ class SyncInventoryCommand extends Command
                     'stock_qty' => $posItem->stock_qty,
                     'is_service' => $posItem->is_service,
                 ]);
-                $this->info("Updated item: {$posItem->name} ({$posItem->sku})");
+                $this->info("✅ Matched item by SKU: {$posItem->sku} | Updated bodega item");
             } else {
                 // Create new item
                 Item::create([
@@ -66,7 +66,7 @@ class SyncInventoryCommand extends Command
                     'stock_qty' => $posItem->stock_qty,
                     'is_service' => $posItem->is_service,
                 ]);
-                $this->info("Created new item: {$posItem->name} ({$posItem->sku})");
+                $this->info("🆕 SKU: {$posItem->sku} | Created new item in bodega: {$posItem->name}");
             }
             $count++;
         }
@@ -76,7 +76,7 @@ class SyncInventoryCommand extends Command
 
     private function syncFromBodega(): void
     {
-        $this->info("Syncing FROM bodega TO main POS...");
+        $this->info("Syncing FROM bodega TO main POS (matching by SKU)...");
         $count = 0;
 
         // Get all items from bodega
@@ -98,7 +98,7 @@ class SyncInventoryCommand extends Command
                     'is_service' => $bodegaItem->is_service,
                     'updated_at' => now(),
                 ]);
-                $this->info("Updated item: {$bodegaItem->name} ({$bodegaItem->sku})");
+                $this->info("✅ Matched item by SKU: {$bodegaItem->sku} | Updated main POS item");
             } else {
                 // Create new item in main POS
                 DB::connection('pos')->table('items')->insert([
@@ -112,7 +112,7 @@ class SyncInventoryCommand extends Command
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
-                $this->info("Created new item: {$bodegaItem->name} ({$bodegaItem->sku})");
+                $this->info("🆕 SKU: {$bodegaItem->sku} | Created new item in main POS: {$bodegaItem->name}");
             }
             $count++;
         }

@@ -68,8 +68,39 @@ const CashierInventoryManagement = () => {
 
     // ── Request Item state ──
     const [isRequestModalOpen, setIsRequestModalOpen] = React.useState(false);
-    const [requestForm, setRequestForm] = React.useState({ item_name: '', quantity: '', reason: '' });
+    const [requestForm, setRequestForm] = React.useState({ sku: '', item_name: '', quantity: '', reason: '' });
     const [requestStatus, setRequestStatus] = React.useState('');
+    const [isSearchingSku, setIsSearchingSku] = React.useState(false);
+
+    React.useEffect(() => {
+        const fetchItemBySku = async () => {
+            if (!requestForm.sku.trim()) {
+                if (requestForm.item_name !== '') {
+                    setRequestForm(prev => ({ ...prev, item_name: '' }));
+                }
+                return;
+            }
+            const localMatch = items.find(i => i.sku === requestForm.sku.trim());
+            if (localMatch) {
+                setRequestForm(prev => ({ ...prev, item_name: localMatch.name }));
+                return;
+            }
+            setIsSearchingSku(true);
+            try {
+                const res = await axios.get('/api/inventory', { params: { q: requestForm.sku.trim() } });
+                const remoteItems = Array.isArray(res.data?.data) ? res.data.data : Array.isArray(res.data) ? res.data : [];
+                const exactMatch = remoteItems.find(i => i.sku === requestForm.sku.trim());
+                setRequestForm(prev => ({ ...prev, item_name: exactMatch ? exactMatch.name : 'Item not found' }));
+            } catch (err) {
+                setRequestForm(prev => ({ ...prev, item_name: 'Error searching item' }));
+            } finally {
+                setIsSearchingSku(false);
+            }
+        };
+
+        const id = setTimeout(fetchItemBySku, 400);
+        return () => clearTimeout(id);
+    }, [requestForm.sku, items]);
 
     const handleRequestSubmit = async (e) => {
         e.preventDefault();
@@ -77,7 +108,7 @@ const CashierInventoryManagement = () => {
         setTimeout(() => {
             setIsRequestModalOpen(false);
             setRequestStatus('');
-            setRequestForm({ item_name: '', quantity: '', reason: '' });
+            setRequestForm({ sku: '', item_name: '', quantity: '', reason: '' });
         }, 1500);
     };
 
@@ -1435,14 +1466,27 @@ const CashierInventoryManagement = () => {
                                         {requestStatus && <div className="mb-4 p-3 bg-[#e8f5e9] text-[#2e7d32] rounded-lg text-sm border border-[#c8e6c9]">{requestStatus}</div>}
                                         <form onSubmit={handleRequestSubmit} className="space-y-4">
                                             <div>
-                                                <label className="block text-[11px] font-semibold text-[#a6a6a6] uppercase tracking-wider mb-1.5">Item Name</label>
+                                                <label className="block text-[11px] font-semibold text-[#a6a6a6] uppercase tracking-wider mb-1.5">SKU</label>
                                                 <input
                                                     type="text"
                                                     required
-                                                    value={requestForm.item_name}
-                                                    onChange={(e) => setRequestForm({ ...requestForm, item_name: e.target.value })}
-                                                    placeholder="e.g. New Product Name"
+                                                    value={requestForm.sku}
+                                                    onChange={(e) => setRequestForm({ ...requestForm, sku: e.target.value })}
+                                                    placeholder="e.g. SKU-12345"
                                                     className="w-full h-10 px-3 rounded-xl border border-[#cbcbcb] text-sm text-[#818181] bg-white focus:outline-none focus:border-[#818181] transition-colors"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[11px] font-semibold text-[#a6a6a6] uppercase tracking-wider mb-1.5 flex items-center gap-2">
+                                                    Item Name
+                                                    {isSearchingSku && <Loader2 size={12} className="animate-spin text-[#a6a6a6]" />}
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    readOnly
+                                                    value={requestForm.item_name}
+                                                    placeholder="Item name will appear here"
+                                                    className="w-full h-10 px-3 rounded-xl border border-[#cbcbcb] text-sm text-[#a6a6a6] bg-[#f8f8f8] focus:outline-none transition-colors cursor-not-allowed"
                                                 />
                                             </div>
                                             <div>

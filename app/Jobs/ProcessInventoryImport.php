@@ -448,7 +448,7 @@ class ProcessInventoryImport implements ShouldQueue
                 }
 
                 $delta = $qty - $oldQty;
-                if ($delta !== 0 && ! $item->is_service) {
+                if ($delta !== 0) {
                     StockLog::create([
                         'item_id' => $item->id,
                         'branch_id' => $branchId,

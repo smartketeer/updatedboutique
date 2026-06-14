@@ -99,7 +99,7 @@ class SalesController extends Controller
 
                 $requestedQty = (int) $itemData['quantity'];
                 $availableQty = (int) $stock->quantity;
-                if (! $item->is_service && $availableQty < $requestedQty) {
+                if ($availableQty < $requestedQty) {
                     $shortfall = $requestedQty - $availableQty;
 
                     ActivityLog::create([
@@ -168,7 +168,7 @@ class SalesController extends Controller
                 }
 
                 // Update stock levels and log
-                if (! $item->is_service) {
+                if (true) {
                     $stock->decrement('quantity', $quantity);
                     $item->decrement('stock_qty', $quantity);
                     StockLog::create([
@@ -693,7 +693,7 @@ class SalesController extends Controller
             // 2. Return items to stock
             foreach ($sale->saleItems as $saleItem) {
                 $item = Item::lockForUpdate()->find($saleItem->item_id);
-                if ($item && !$item->is_service) {
+                if ($item) {
                     $stock = BranchItemStock::query()
                         ->where('branch_id', $branchId)
                         ->where('item_id', $item->id)

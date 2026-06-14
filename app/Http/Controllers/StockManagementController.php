@@ -83,11 +83,7 @@ class StockManagementController extends Controller
             $delta = 0;
             $newQty = $oldQty;
 
-            if ($item->is_service) {
-                throw ValidationException::withMessages([
-                    'item_id' => ['Stock movements are not allowed for services.'],
-                ]);
-            }
+            // Service checks removed
 
             if ($reason === 'receipt' || $reason === 'supply') {
                 if ($qty === null || $qty <= 0) {

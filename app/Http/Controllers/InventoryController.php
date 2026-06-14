@@ -196,12 +196,10 @@ class InventoryController extends Controller
 
         if ($branchId) {
             $items = $this->itemForBranchQuery($branchId)
-                ->where('items.is_service', false)
                 ->where('branch_item_stocks.quantity', '<=', $lowStockThreshold)
                 ->get();
         } else {
-            $items = Item::where('is_service', false)
-                ->where('stock_qty', '<=', $lowStockThreshold)
+            $items = Item::where('stock_qty', '<=', $lowStockThreshold)
                 ->with('primaryImage')
                 ->get();
         }

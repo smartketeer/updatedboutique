@@ -75,7 +75,6 @@ class CashierInventoryController extends Controller
             'price' => 'required|numeric|min:0',
             'cost' => 'required|numeric|min:0',
             'stock_qty' => 'required|integer|min:0',
-            'is_service' => 'required|boolean',
         ]);
 
         return DB::transaction(function () use ($request, $validated) {
@@ -86,7 +85,7 @@ class CashierInventoryController extends Controller
             }
 
             $initialQty = (int) $validated['stock_qty'];
-            $isService = (bool) $validated['is_service'];
+            $isService = false;
             $sku = trim((string) ($validated['sku'] ?? ''));
 
             $existing = null;
@@ -98,9 +97,7 @@ class CashierInventoryController extends Controller
             }
 
             if ($existing) {
-                if ((bool) $existing->is_service !== $isService) {
-                    return response()->json(['message' => 'SKU already exists with a different item type (service/product).'], 422);
-                }
+                // Type check removed
 
                 $existing->update([
                     'category_id' => (int) $validated['category_id'],
@@ -117,7 +114,7 @@ class CashierInventoryController extends Controller
                     );
 
                 $oldBranchQty = (int) $stock->quantity;
-                $addedQty = $existing->is_service ? 0 : $initialQty;
+                $addedQty = $initialQty;
                 $newBranchQty = $oldBranchQty + $addedQty;
                 if ($newBranchQty !== $oldBranchQty) {
                     $stock->update(['quantity' => $newBranchQty]);
@@ -146,7 +143,7 @@ class CashierInventoryController extends Controller
                         'category_name' => optional($existing->category)->name,
                         'price' => (float) $existing->price,
                         'cost' => (float) $existing->cost,
-                        'item_type' => $existing->is_service ? 'service' : 'product',
+                        'item_type' => 'product',
                         'added_qty' => $addedQty,
                         'new_branch_qty' => $newBranchQty,
                     ],
@@ -186,7 +183,7 @@ class CashierInventoryController extends Controller
                 'quantity' => $normalizedStock,
             ]);
 
-            if (! $item->is_service) {
+            if (true) {
                 StockLog::create([
                     'item_id' => $item->id,
                     'branch_id' => $branchId,
@@ -210,7 +207,7 @@ class CashierInventoryController extends Controller
                     'category_name' => optional(Category::find($item->category_id))->name,
                     'price' => (float) $item->price,
                     'cost' => (float) $item->cost,
-                    'item_type' => $item->is_service ? 'service' : 'product',
+                    'item_type' => 'product',
                     'initial_stock_qty' => $normalizedStock,
                 ],
                 'ip_address' => $request->ip(),
@@ -242,7 +239,7 @@ class CashierInventoryController extends Controller
             'price' => 'sometimes|required|numeric|min:0',
             'cost' => 'sometimes|required|numeric|min:0',
             'stock_qty' => 'sometimes|required|integer|min:0',
-            'is_service' => 'sometimes|required|boolean',
+            // is_service removed
             'adjustment_reason' => 'required|string|max:500',
         ], [
             'adjustment_reason.required' => 'An adjustment reason is required when modifying any product details.',
@@ -412,9 +409,7 @@ class CashierInventoryController extends Controller
                 return response()->json(['message' => 'No branch is configured yet.'], 422);
             }
 
-            if ($item->is_service) {
-                return response()->json(['message' => 'Cannot pull out services.'], 422);
-            }
+            // Service check removed
 
             $stock = BranchItemStock::query()
                 ->lockForUpdate()
@@ -481,9 +476,7 @@ class CashierInventoryController extends Controller
                 return response()->json(['message' => 'Cannot transfer to the same branch.'], 422);
             }
 
-            if ($item->is_service) {
-                return response()->json(['message' => 'Cannot transfer services.'], 422);
-            }
+            // Service check removed
 
             $fromStock = BranchItemStock::query()
                 ->lockForUpdate()

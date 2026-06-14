@@ -212,7 +212,6 @@ class ReportingController extends Controller
 
         $globalTotals = BranchItemStock::query()
             ->join('items', 'items.id', '=', 'branch_item_stocks.item_id')
-            ->where('items.is_service', false)
             ->selectRaw("$exprCost, $exprPrice")
             ->first();
 
@@ -224,8 +223,7 @@ class ReportingController extends Controller
         foreach ($branches as $branch) {
             $branchTotals = BranchItemStock::query()
                 ->join('items', 'items.id', '=', 'branch_item_stocks.item_id')
-                ->where('items.is_service', false)
-                ->where('branch_id', $branch->id)
+                  ->where('branch_id', $branch->id)
                 ->selectRaw("$exprCost, $exprPrice")
                 ->first();
                 

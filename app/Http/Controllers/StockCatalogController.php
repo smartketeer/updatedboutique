@@ -40,14 +40,14 @@ class StockCatalogController extends Controller
             'sku' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'cost' => 'required|numeric|min:0',
-            'is_service' => 'required|boolean',
+            // is_service removed
             'branch_id' => 'required|integer|exists:branches,id',
             'stock' => 'nullable|numeric|min:0',
         ]);
 
         return DB::transaction(function () use ($request, $validated) {
             $branchId = (int) $validated['branch_id'];
-            $requestedIsService = (bool) $validated['is_service'];
+            $requestedIsService = false;
             $sku = trim((string) ($validated['sku'] ?? ''));
             $initialStock = isset($validated['stock']) ? (int) $validated['stock'] : 0;
 
@@ -60,9 +60,7 @@ class StockCatalogController extends Controller
             }
 
             if ($existing) {
-                if ((bool) $existing->is_service !== $requestedIsService) {
-                    return response()->json(['message' => 'SKU already exists with a different item type (service/product).'], 422);
-                }
+                // Type check removed
 
                 $existing->update([
                     'category_id' => (int) $validated['category_id'],
@@ -139,7 +137,7 @@ class StockCatalogController extends Controller
             'sku' => 'sometimes|nullable|string|unique:items,sku,'.$item->id,
             'price' => 'sometimes|required|numeric|min:0',
             'cost' => 'sometimes|required|numeric|min:0',
-            'is_service' => 'sometimes|required|boolean',
+            // is_service removed
         ]);
 
         $before = [

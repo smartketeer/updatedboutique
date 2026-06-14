@@ -169,8 +169,10 @@ const Settings = () => {
             </div>
 
             {/* Master Inventory Link */}
-            <Link
-                to="/admin/branches"
+            <a
+                href="https://bodega.boutique-pos.com"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="mt-6 block bg-white border border-[#cbcbcb] rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden group"
             >
                 <div className="px-5 py-4 sm:px-6 sm:py-5 flex items-center justify-between gap-4">
@@ -181,14 +183,13 @@ const Settings = () => {
                         <div>
                             <div className="flex items-center gap-2">
                                 <h2 className="text-base font-semibold text-[#818181] tracking-tight">Master Inventory (BODEGA)</h2>
-                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold bg-[#dddddd] text-[#818181] uppercase tracking-wider">Coming Soon</span>
                             </div>
                             <p className="text-xs text-[#a6a6a6] font-medium mt-0.5">Warehouse management system.</p>
                         </div>
                     </div>
                     <span className="text-[#cbcbcb] group-hover:text-[#818181] transition-colors text-lg">&rarr;</span>
                 </div>
-            </Link>
+            </a>
         </div>
     );
 };

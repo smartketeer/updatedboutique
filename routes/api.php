@@ -51,6 +51,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/inventory-access/request', [InventoryAccessController::class, 'requestAccess']);
         Route::post('/inventory-access/verify', [InventoryAccessController::class, 'verify']);
         Route::post('/inventory-access/revoke', [InventoryAccessController::class, 'revoke']);
+        Route::get('/requisitions/notifications', [BranchRequisitionController::class, 'notifications']);
+        Route::post('/requisitions/{id}/mark-notified', [BranchRequisitionController::class, 'markNotified']);
         Route::post('/requisitions', [BranchRequisitionController::class, 'store']);
 
         Route::middleware('inventory_access')->group(function () {

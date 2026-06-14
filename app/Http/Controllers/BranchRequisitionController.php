@@ -77,4 +77,24 @@ class BranchRequisitionController extends Controller
 
         return response()->json(['message' => 'Status updated successfully.', 'requisition' => $requisition]);
     }
+    public function notifications(Request $request)
+    {
+        $branchId = $request->query('branch_id');
+
+        $notifications = BranchRequisition::with(['branch'])
+            ->where('branch_id', $branchId)
+            ->where('status', 'rejected')
+            ->where('is_notified', false)
+            ->get();
+
+        return response()->json($notifications);
+    }
+
+    public function markNotified(Request $request, $id)
+    {
+        $requisition = BranchRequisition::findOrFail($id);
+        $requisition->update(['is_notified' => true]);
+
+        return response()->json(['message' => 'Notification marked as read']);
+    }
 }

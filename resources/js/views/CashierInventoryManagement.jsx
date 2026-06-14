@@ -1503,14 +1503,17 @@ const CashierInventoryManagement = () => {
                                             </div>
                                             <div>
                                                 <label className="block text-[11px] font-semibold text-[#a6a6a6] uppercase tracking-wider mb-1.5">Reason for Request</label>
-                                                <textarea
+                                                <select
                                                     required
-                                                    rows="3"
                                                     value={requestForm.reason}
                                                     onChange={(e) => setRequestForm({ ...requestForm, reason: e.target.value })}
-                                                    placeholder="Why is this item needed?"
-                                                    className="w-full p-3 rounded-xl border border-[#cbcbcb] text-sm text-[#818181] bg-white focus:outline-none focus:border-[#818181] transition-colors resize-none"
-                                                />
+                                                    className="w-full h-10 px-3 rounded-xl border border-[#cbcbcb] text-sm text-[#818181] bg-white focus:outline-none focus:border-[#818181] transition-colors appearance-none"
+                                                >
+                                                    <option value="" disabled>Select a reason</option>
+                                                    <option value="Refill">Refill</option>
+                                                    <option value="Out of Stock">Out of Stock</option>
+                                                    <option value="Others">Others</option>
+                                                </select>
                                             </div>
                                             <div className="pt-2">
                                                 <button type="submit" className="w-full h-10 rounded-xl bg-[#818181] text-white text-[12px] font-semibold shadow-sm hover:bg-[#a6a6a6] transition-colors">Submit Request</button>

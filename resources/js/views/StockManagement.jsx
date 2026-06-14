@@ -296,7 +296,7 @@ const StockManagement = () => {
                 branch_id: Number(branchId),
             });
             setIsAddItemOpen(false);
-            setNewItem({ name: '', category_id: '', sku: '', price: '', cost: '', stock: '', is_service: false });
+            setNewItem({ name: '', category_id: '', sku: '', price: '', cost: '', stock: '' });
             await loadCatalog(branchId);
             if (res.data?.id != null) setSelectedItemId(String(res.data.id));
         } catch (err) {
@@ -700,7 +700,7 @@ const StockManagement = () => {
                             <div className="text-sm font-semibold text-[#818181]">{entryTitle}</div>
                             {selectedItem ? (
                                 <div className="text-[11px] font-medium text-[#a6a6a6] uppercase tracking-widest mt-1">
-                                    Current stock: {selectedItem.is_service ? EM_DASH : Number(selectedItem.stock_qty || 0)}
+                                    Current stock: {Number(selectedItem.stock_qty || 0)}
                                 </div>
                             ) : null}
                         </div>
@@ -734,7 +734,7 @@ const StockManagement = () => {
                                     <option value="">Select item</option>
                                     {filteredItems.slice(0, 500).map((it) => (
                                         <option key={it.id} value={String(it.id)}>
-                                            {it.name} {it.sku ? `(${it.sku})` : ''} {it.is_service ? '[Service]' : ''}
+                                            {it.name} {it.sku ? `(${it.sku})` : ''}
                                         </option>
                                     ))}
                                 </select>
@@ -990,7 +990,7 @@ const StockManagement = () => {
                                                 value={newItem.category_id}
                                                 onChange={(e) => {
                                                     const cat = categoriesForSelect.find((c) => String(c.id) === String(e.target.value));
-                                                    setNewItem({ ...newItem, category_id: e.target.value, is_service: cat?.type === 'service' });
+                                                    setNewItem({ ...newItem, category_id: e.target.value });
                                                 }}
                                                 className="w-full px-4 py-2 border border-[#19140035] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#818181]/10 text-sm font-medium"
                                             >
@@ -1023,17 +1023,15 @@ const StockManagement = () => {
                                                     className="w-full px-4 py-2 border border-[#19140035] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#818181]/10 text-sm font-medium"
                                                 />
                                             </div>
-                                            {!newItem.is_service && (
-                                                <div className="col-span-2">
-                                                    <label className="block text-xs font-semibold text-[#a6a6a6] uppercase tracking-widest mb-1">Initial Stocks</label>
-                                                    <input
-                                                        type="number"
-                                                        value={newItem.stock}
-                                                        onChange={(e) => setNewItem({ ...newItem, stock: e.target.value })}
-                                                        className="w-full px-4 py-2 border border-[#19140035] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#818181]/10 text-sm font-medium"
-                                                    />
-                                                </div>
-                                            )}
+                                            <div className="col-span-2">
+                                                <label className="block text-xs font-semibold text-[#a6a6a6] uppercase tracking-widest mb-1">Initial Stocks</label>
+                                                <input
+                                                    type="number"
+                                                    value={newItem.stock}
+                                                    onChange={(e) => setNewItem({ ...newItem, stock: e.target.value })}
+                                                    className="w-full px-4 py-2 border border-[#19140035] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#818181]/10 text-sm font-medium"
+                                                />
+                                            </div>
                                         </div>
                                         <div className="pt-4">
                                             <button type="submit" className="w-full py-3 bg-[#818181] text-white rounded-xl font-semibold text-sm uppercase tracking-widest hover:bg-[#2c2c2a] transition-all shadow-lg shadow-[#81818120]">

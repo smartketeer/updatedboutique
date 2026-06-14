@@ -141,13 +141,8 @@ const CartPanel = ({
                                             <div className="mt-1 flex flex-wrap items-center gap-2 text-[12px] font-medium text-[#a6a6a6]">
                                                 <span className="font-semibold">{PESO}{formatAmount(item.price)}</span>
                                                 {item.is_custom ? (
-                                                    <span className="px-2 py-0.5 rounded-md bg-[#dddddd] text-indigo-700 text-[10px] font-medium uppercase tracking-wider">
+                                                    <span className="px-2 py-0.5 rounded-md bg-[#dddddd] text-[#818181] text-[10px] font-medium uppercase tracking-wider">
                                                         Custom
-                                                    </span>
-                                                ) : null}
-                                                {item.is_custom ? null : item.is_service ? (
-                                                    <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 text-[10px] font-medium uppercase tracking-wider">
-                                                        Service
                                                     </span>
                                                 ) : null}
                                             </div>
@@ -595,7 +590,7 @@ const POSTerminal = () => {
 
     const getAvailableQty = (item) => {
         if (!item) return 0;
-        if (item.is_custom || item.is_service) return Number.POSITIVE_INFINITY;
+        if (item.is_custom) return Number.POSITIVE_INFINITY;
         return Number.isFinite(Number(stockById[item.id])) ? Number(stockById[item.id]) : 0;
     };
 
@@ -1103,11 +1098,6 @@ const POSTerminal = () => {
                                                             <Package size={40} strokeWidth={1} className={out ? 'text-zinc-300' : 'text-[#cbcbcb]'} />
                                                         )}
                                                     </div>
-                                                    {Boolean(item.is_service) && (
-                                                        <div className="absolute top-2 right-2 px-2 py-1 rounded-lg bg-white/90 backdrop-blur-sm shadow-sm border border-zinc-100 text-[10px] font-semibold uppercase tracking-widest text-emerald-600">
-                                                            Service
-                                                        </div>
-                                                    )}
                                                 </div>
                                                 
                                                 <div className="flex-1 flex flex-col">
@@ -1126,11 +1116,9 @@ const POSTerminal = () => {
                                                             <div className="text-[18px] font-semibold text-[#818181] tracking-tight">
                                                                 {PESO}{Number(item.price).toLocaleString()}
                                                             </div>
-                                                            {!item.is_service && (
-                                                                <div className={`text-[11px] font-medium mt-0.5 ${out ? 'text-red-500' : low ? 'text-red-600' : 'text-[#a6a6a6]'}`}>
-                                                                    {out ? 'Out of stock' : `${Math.max(0, available)} in stock`}
-                                                                </div>
-                                                            )}
+                                                            <div className={`text-[11px] font-medium mt-0.5 ${out ? 'text-red-500' : low ? 'text-red-600' : 'text-[#a6a6a6]'}`}>
+                                                                {out ? 'Out of stock' : `${Math.max(0, available)} in stock`}
+                                                            </div>
                                                         </div>
                                                         <button
                                                             type="button"

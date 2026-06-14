@@ -172,8 +172,8 @@ const Inventory = () => {
             if (!matchesCategory) return false;
 
             const qty = Number(item.stock_qty || 0);
-            if (stockStatusFilter === 'low' && (item.is_service || qty <= 0 || qty > 5)) return false;
-            if (stockStatusFilter === 'out' && (item.is_service || qty !== 0)) return false;
+            if (stockStatusFilter === 'low' && (qty <= 0 || qty > 5)) return false;
+            if (stockStatusFilter === 'out' && (qty !== 0)) return false;
 
             if (!normalizedSearch) return true;
             const name = String(item.name || '').toLowerCase();
@@ -184,7 +184,7 @@ const Inventory = () => {
 
         const sortDir = stockSort === 'desc' ? -1 : 1;
         const getQty = (it) => {
-            if (it?.is_service) return null;
+            // No service check needed
             const raw = it?.stock_qty;
             if (raw === null || raw === undefined || raw === '') return null;
             const n = Number(raw);
@@ -226,8 +226,8 @@ const Inventory = () => {
                         escape(r?.sku || ''),
                         escape(r?.category?.name || ''),
                         escape(r?.price ?? ''),
-                        escape(r?.is_service ? '' : r?.stock_qty ?? ''),
-                        escape(r?.is_service ? 'Service' : 'Product'),
+                        escape(r?.stock_qty ?? ''),
+                        escape('Product'),
                     ].join(','),
                 ),
             ];
@@ -922,7 +922,7 @@ const Inventory = () => {
                                     const qtyRaw = item?.stock_qty;
                                     const hasRawQty = !(qtyRaw === null || qtyRaw === undefined || qtyRaw === '');
                                     const qty = hasRawQty ? Number(qtyRaw) : NaN;
-                                    const hasQty = !item.is_service && hasRawQty && Number.isFinite(qty);
+                                    const hasQty = hasRawQty && Number.isFinite(qty);
                                     const isNeg = hasQty && qty < 0;
                                     const isOut = hasQty && qty === 0;
                                     const isLow = hasQty && qty > 0 && qty <= 5;
@@ -962,9 +962,6 @@ const Inventory = () => {
                                             </td>
                                             <td className="px-6 py-4 text-sm font-semibold text-[#818181]">{PESO}{Number(item.price || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                                             <td className="px-6 py-4">
-                                                {item.is_service ? (
-                                                    <span className="text-xs text-[#a6a6a6] font-medium uppercase italic tracking-tighter">{EM_DASH} Service</span>
-                                                ) : (
                                                     <span
                                                         className={`text-sm font-semibold px-3 py-1 rounded-lg border ${
                                                             !hasQty
@@ -982,15 +979,12 @@ const Inventory = () => {
                                                     >
                                                         {hasQty ? qty : EM_DASH}
                                                     </span>
-                                                )}
                                             </td>
                                             <td className="px-6 py-4">
                                                 <span
-                                                    className={`text-[10px] font-semibold px-2 py-0.5 rounded border uppercase tracking-widest ${
-                                                        item.is_service ? 'bg-[#dddddd] text-[#818181] border-[#cbcbcb]' : 'bg-[#dddddd] text-[#818181] border-[#cbcbcb]'
-                                                    }`}
+                                                    className="text-[10px] font-semibold px-2 py-0.5 rounded border uppercase tracking-widest bg-[#dddddd] text-[#818181] border-[#cbcbcb]"
                                                 >
-                                                    {item.is_service ? 'Service' : 'Product'}
+                                                    Product
                                                 </span>
                                             </td>
                                         </tr>

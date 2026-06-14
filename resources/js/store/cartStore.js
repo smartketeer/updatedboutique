@@ -45,7 +45,6 @@ export const useCartStore = create((set, get) => ({
                     price: unitPrice,
                     original_price: null,
                     price_override_reason: null,
-                    is_service: true,
                     is_custom: true,
                     custom_reason: reason || null,
                 },

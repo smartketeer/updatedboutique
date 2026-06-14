@@ -1071,7 +1071,7 @@ const CashierInventoryManagement = () => {
                                             </td>
                                             <td className="px-6 py-3 text-[#a6a6a6] text-xs font-medium">{i.category?.name || '-'}</td>
                                             <td className="px-6 py-3 text-right font-medium text-[#818181] text-xs">{PESO}{Number(i.price || 0).toLocaleString()}</td>
-                                            <td className="px-6 py-3 text-right text-[#a6a6a6] text-xs font-medium">{i.is_service ? '-' : i.stock_qty}</td>
+                                            <td className="px-6 py-3 text-right text-[#a6a6a6] text-xs font-medium">{i.stock_qty}</td>
                                             <td className="px-6 py-3">
                                                 <div className="flex justify-end gap-2">
                                                     {isTransferMode ? (
@@ -1079,7 +1079,7 @@ const CashierInventoryManagement = () => {
                                                             <button
                                                                 type="button"
                                                                 onClick={() => openTransferModal(i)}
-                                                                disabled={!accessToken || i.is_service}
+                                                                disabled={!accessToken}
                                                                 className="px-3 py-1.5 text-xs font-medium text-[#818181] border border-[#cbcbcb] rounded-lg hover:bg-[#dddddd] disabled:opacity-50 inline-flex items-center gap-2 transition-colors"
                                                             >
                                                                 <ArrowRightLeft size={14} />
@@ -1088,7 +1088,7 @@ const CashierInventoryManagement = () => {
                                                             <button
                                                                 type="button"
                                                                 onClick={() => openPullOutModal(i)}
-                                                                disabled={!accessToken || i.is_service}
+                                                                disabled={!accessToken}
                                                                 className="px-3 py-1.5 text-xs font-medium border border-[#cbcbcb] text-orange-500 rounded-lg hover:bg-orange-50 hover:border-orange-200 disabled:opacity-50 inline-flex items-center gap-2 transition-colors"
                                                             >
                                                                 <LogOut size={14} />
@@ -1352,10 +1352,8 @@ const CashierInventoryManagement = () => {
                                                     min="0"
                                                     step="1"
                                                     value={itemForm.stock_qty}
-                                                    onChange={(e) => setItemForm((f) => ({ ...f, stock_qty: e.target.value }))}
-                                                    className="w-full px-3 py-2 border border-[#cbcbcb] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#818181]/20 focus:border-[#818181] bg-white text-[#818181] font-medium transition-all"
-                                                    required={!itemForm.is_service}
-                                                    disabled={itemForm.is_service}
+                                                    readOnly
+                                                    className="w-full px-3 py-2 border border-[#cbcbcb] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#818181]/20 focus:border-[#818181] bg-[#f5f5f5] text-[#818181] font-medium transition-all cursor-not-allowed"
                                                 />
                                             </div>
                                             {editingItem ? (
@@ -1373,18 +1371,6 @@ const CashierInventoryManagement = () => {
                                                     />
                                                 </div>
                                             ) : null}
-                                        </div>
-                                        <div className="flex items-center gap-2 min-h-[44px]">
-                                            <input
-                                                id="is_service"
-                                                type="checkbox"
-                                                checked={itemForm.is_service}
-                                                onChange={(e) => setItemForm((f) => ({ ...f, is_service: e.target.checked }))}
-                                                className="accent-[#818181] w-5 h-5 cursor-pointer touch-manipulation"
-                                            />
-                                            <label htmlFor="is_service" className="text-sm text-[#818181] font-medium cursor-pointer select-none">
-                                                Service (no stock tracking)
-                                            </label>
                                         </div>
                                         <div className="flex gap-2 pt-2">
                                             <button

@@ -39,8 +39,13 @@ class SkuGenerator
         // Check bodega database
         $existsInBodega = Item::where('sku', $sku)->exists();
         
-        // Check main POS database
-        $existsInPos = DB::connection('pos')->table('items')->where('sku', $sku)->exists();
+        // Check main POS database (gracefully skip if connection fails)
+        $existsInPos = false;
+        try {
+            $existsInPos = DB::connection('pos')->table('items')->where('sku', $sku)->exists();
+        } catch (\Exception $e) {
+            // POS database connection unavailable — skip cross-check
+        }
 
         return $existsInBodega || $existsInPos;
     }
@@ -116,22 +121,26 @@ class SkuGenerator
             ->toArray();
         $existingNumbers = array_merge($existingNumbers, $bodegaNumbers);
 
-        // From main POS database
-        $posNumbers = DB::connection('pos')->table('items')
-            ->where('sku', 'LIKE', "{$categoryCode}-%")
-            ->pluck('sku')
-            ->map(function ($sku) {
-                $skuParts = explode('-', $sku);
-                $lastPart = end($skuParts);
-                if (preg_match('/^\d{4}$/', $lastPart)) {
-                    return (int)$lastPart;
-                }
-                return null;
-            })
-            ->filter()
-            ->flip()
-            ->toArray();
-        $existingNumbers = array_merge($existingNumbers, $posNumbers);
+        // From main POS database (gracefully skip if connection fails)
+        try {
+            $posNumbers = DB::connection('pos')->table('items')
+                ->where('sku', 'LIKE', "{$categoryCode}-%")
+                ->pluck('sku')
+                ->map(function ($sku) {
+                    $skuParts = explode('-', $sku);
+                    $lastPart = end($skuParts);
+                    if (preg_match('/^\d{4}$/', $lastPart)) {
+                        return (int)$lastPart;
+                    }
+                    return null;
+                })
+                ->filter()
+                ->flip()
+                ->toArray();
+            $existingNumbers = array_merge($existingNumbers, $posNumbers);
+        } catch (\Exception $e) {
+            // POS database connection unavailable — skip cross-check
+        }
 
         // Generate random number between 1 and 9999 that's not in existingNumbers
         $maxAttempts = 1000;

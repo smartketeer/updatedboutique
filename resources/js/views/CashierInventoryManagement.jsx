@@ -331,6 +331,12 @@ const CashierInventoryManagement = () => {
         }
     };
 
+    const generateSku = () => {
+        const ts = Date.now().toString(36).toUpperCase();
+        const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+        return `SKU-${ts}-${rand}`;
+    };
+
     const openAddItem = () => {
         if (!settings.customItemsEnabled) {
             alert('Adding new items is disabled by admin.');
@@ -340,7 +346,7 @@ const CashierInventoryManagement = () => {
         setItemForm({
             category_id: categories[0]?.id ? String(categories[0].id) : '',
             name: '',
-            sku: '',
+            sku: generateSku(),
             price: '',
             cost: '',
             stock_qty: '',
@@ -1083,7 +1089,8 @@ const CashierInventoryManagement = () => {
                                             type="button"
                                             onClick={verifyCode}
                                             disabled={verifying || !otp.trim() || !requestInfo?.request_id}
-                                            className="w-full py-3 bg-[#818181] text-white rounded-xl font-medium hover:bg-[#a6a6a6] transition-colors shadow-sm disabled:opacity-50"
+                                            className="w-full min-h-[48px] py-3 bg-[#818181] text-white rounded-xl font-semibold text-sm hover:bg-[#a6a6a6] active:bg-[#555] transition-colors shadow-sm disabled:opacity-50 cursor-pointer touch-manipulation select-none"
+                                            style={{ WebkitTapHighlightColor: 'transparent' }}
                                         >
                                             Verify OTP
                                         </button>
@@ -1091,7 +1098,8 @@ const CashierInventoryManagement = () => {
                                             type="button"
                                             onClick={requestNewCode}
                                             disabled={requesting || !canResend}
-                                            className="w-full py-3 border border-[#cbcbcb] text-[#818181] rounded-xl font-medium hover:bg-[#dddddd] transition-colors disabled:opacity-50"
+                                            className="w-full min-h-[48px] py-3 border border-[#cbcbcb] text-[#818181] rounded-xl font-semibold text-sm hover:bg-[#dddddd] active:bg-[#cbcbcb] transition-colors disabled:opacity-50 cursor-pointer touch-manipulation select-none"
+                                            style={{ WebkitTapHighlightColor: 'transparent' }}
                                         >
                                             {canResend
                                                 ? requestInfo?.request_id
@@ -1118,7 +1126,7 @@ const CashierInventoryManagement = () => {
                                 <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 shadow-2xl border border-[#cbcbcb]">
                                     <div className="flex items-center justify-between mb-4">
                                         <Dialog.Title className="text-lg font-medium text-[#818181]">{editingItem ? 'Edit Item' : 'Add Item'}</Dialog.Title>
-                                        <button type="button" onClick={() => setIsItemModalOpen(false)} className="p-2 rounded-xl text-[#cbcbcb] hover:text-[#818181] hover:bg-[#dddddd] transition-colors">
+                                        <button type="button" onClick={() => setIsItemModalOpen(false)} className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-[#cbcbcb] hover:text-[#818181] hover:bg-[#dddddd] active:bg-[#cbcbcb] transition-colors cursor-pointer touch-manipulation">
                                             <X size={18} />
                                         </button>
                                     </div>
@@ -1153,9 +1161,11 @@ const CashierInventoryManagement = () => {
                                                 <label className="block text-xs font-semibold text-[#a6a6a6] mb-1">SKU</label>
                                                 <input
                                                     value={itemForm.sku}
+                                                    readOnly={!editingItem}
                                                     onChange={(e) => setItemForm((f) => ({ ...f, sku: e.target.value }))}
-                                                    className="w-full px-3 py-2 border border-[#cbcbcb] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#818181]/20 focus:border-[#818181] bg-white text-[#818181] font-medium transition-all"
+                                                    className={`w-full px-3 py-2 border border-[#cbcbcb] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#818181]/20 focus:border-[#818181] text-[#818181] font-medium transition-all ${!editingItem ? 'bg-[#f5f5f5] cursor-not-allowed' : 'bg-white'}`}
                                                 />
+                                                {!editingItem && <p className="text-[10px] text-[#a6a6a6] mt-0.5">Auto-generated. Will be unique for this item.</p>}
                                             </div>
                                         </div>
                                         <div className={`grid grid-cols-1 gap-3 ${editingItem ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-3'}`}>
@@ -1212,15 +1222,15 @@ const CashierInventoryManagement = () => {
                                                 </div>
                                             ) : null}
                                         </div>
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-2 min-h-[44px]">
                                             <input
                                                 id="is_service"
                                                 type="checkbox"
                                                 checked={itemForm.is_service}
                                                 onChange={(e) => setItemForm((f) => ({ ...f, is_service: e.target.checked }))}
-                                                className="accent-[#818181] w-4 h-4"
+                                                className="accent-[#818181] w-5 h-5 cursor-pointer touch-manipulation"
                                             />
-                                            <label htmlFor="is_service" className="text-sm text-[#818181] font-medium">
+                                            <label htmlFor="is_service" className="text-sm text-[#818181] font-medium cursor-pointer select-none">
                                                 Service (no stock tracking)
                                             </label>
                                         </div>
@@ -1228,14 +1238,16 @@ const CashierInventoryManagement = () => {
                                             <button
                                                 type="submit"
                                                 disabled={!accessToken}
-                                                className="flex-1 py-3 bg-[#818181] text-white rounded-xl font-medium hover:bg-[#a6a6a6] shadow-sm transition-colors disabled:opacity-50"
+                                                className="flex-1 min-h-[48px] py-3 bg-[#818181] text-white rounded-xl font-semibold text-sm hover:bg-[#a6a6a6] active:bg-[#555] shadow-sm transition-colors disabled:opacity-50 cursor-pointer touch-manipulation select-none"
+                                                style={{ WebkitTapHighlightColor: 'transparent' }}
                                             >
                                                 Save
                                             </button>
                                             <button
                                                 type="button"
                                                 onClick={() => setIsItemModalOpen(false)}
-                                                className="px-4 py-3 border border-[#cbcbcb] text-[#818181] rounded-xl font-medium hover:bg-[#dddddd] transition-colors"
+                                                className="px-4 min-h-[48px] py-3 border border-[#cbcbcb] text-[#818181] rounded-xl font-semibold text-sm hover:bg-[#dddddd] active:bg-[#cbcbcb] transition-colors cursor-pointer touch-manipulation select-none"
+                                                style={{ WebkitTapHighlightColor: 'transparent' }}
                                             >
                                                 Cancel
                                             </button>
@@ -1387,7 +1399,7 @@ const CashierInventoryManagement = () => {
                                                 />
                                             </div>
                                             <div className="pt-2">
-                                                <button type="submit" className="w-full h-10 rounded-xl bg-[#818181] text-white text-[12px] font-semibold shadow-sm hover:bg-[#a6a6a6] transition-colors">Confirm Transfer</button>
+                                                <button type="submit" className="w-full min-h-[48px] h-10 rounded-xl bg-[#818181] text-white text-[12px] font-semibold shadow-sm hover:bg-[#a6a6a6] active:bg-[#555] transition-colors cursor-pointer touch-manipulation select-none" style={{ WebkitTapHighlightColor: 'transparent' }}>Confirm Transfer</button>
                                             </div>
                                         </form>
                                     </div>
@@ -1442,7 +1454,7 @@ const CashierInventoryManagement = () => {
                                                 />
                                             </div>
                                             <div className="pt-2">
-                                                <button type="submit" className="w-full h-10 rounded-xl border border-[#cbcbcb] text-orange-500 hover:bg-orange-50 hover:border-orange-200 text-[12px] font-semibold shadow-sm transition-colors">Confirm Pull Out</button>
+                                                <button type="submit" className="w-full min-h-[48px] h-10 rounded-xl border border-[#cbcbcb] text-orange-500 hover:bg-orange-50 hover:border-orange-200 active:bg-orange-100 text-[12px] font-semibold shadow-sm transition-colors cursor-pointer touch-manipulation select-none" style={{ WebkitTapHighlightColor: 'transparent' }}>Confirm Pull Out</button>
                                             </div>
                                         </form>
                                     </div>
@@ -1577,7 +1589,7 @@ const CashierInventoryManagement = () => {
                                                 </select>
                                             </div>
                                             <div className="pt-2">
-                                                <button type="submit" disabled={!isItemValid} className="w-full h-10 rounded-xl bg-[#818181] text-white text-[12px] font-semibold shadow-sm hover:bg-[#a6a6a6] disabled:opacity-50 disabled:cursor-not-allowed transition-colors">Submit Request</button>
+                                                <button type="submit" disabled={!isItemValid} className="w-full min-h-[48px] h-10 rounded-xl bg-[#818181] text-white text-[12px] font-semibold shadow-sm hover:bg-[#a6a6a6] active:bg-[#555] disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer touch-manipulation select-none" style={{ WebkitTapHighlightColor: 'transparent' }}>Submit Request</button>
                                             </div>
                                         </form>
                                     </div>

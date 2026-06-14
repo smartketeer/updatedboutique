@@ -19,7 +19,7 @@ class Item extends Model
         parent::boot();
 
         static::creating(function (Item $item) {
-            if (empty($item->sku)) {
+            if (empty($item->sku) || SkuGenerator::skuExists($item->sku)) {
                 $item->sku = SkuGenerator::generate($item);
             }
         });

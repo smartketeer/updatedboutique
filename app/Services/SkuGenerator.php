@@ -34,7 +34,7 @@ class SkuGenerator
         return $sku;
     }
 
-    private static function skuExists(string $sku): bool
+    public static function skuExists(string $sku): bool
     {
         // Check bodega database
         $existsInBodega = Item::where('sku', $sku)->exists();

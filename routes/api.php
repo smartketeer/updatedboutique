@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\BranchController;
+use App\Http\Controllers\BranchRequisitionController;
 use App\Http\Controllers\CashierAccountController;
 use App\Http\Controllers\CashierInventoryController;
 use App\Http\Controllers\ClientController;
@@ -50,6 +51,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/inventory-access/request', [InventoryAccessController::class, 'requestAccess']);
         Route::post('/inventory-access/verify', [InventoryAccessController::class, 'verify']);
         Route::post('/inventory-access/revoke', [InventoryAccessController::class, 'revoke']);
+        Route::post('/requisitions', [BranchRequisitionController::class, 'store']);
 
         Route::middleware('inventory_access')->group(function () {
             Route::post('/cashier/inventory', [CashierInventoryController::class, 'store']);
@@ -104,6 +106,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/activity-logs', [ActivityLogController::class, 'index']);
         Route::get('/inventory-access/requests', [InventoryAccessController::class, 'listRequests']);
         Route::post('/inventory-access/requests/{id}/approve', [InventoryAccessController::class, 'approve']);
+        
+        // Branch Requisitions
+        Route::get('/requisitions', [BranchRequisitionController::class, 'index']);
+        Route::put('/requisitions/{id}/status', [BranchRequisitionController::class, 'updateStatus']);
 
         // Branches
         Route::get('/branches', [BranchController::class, 'index']);

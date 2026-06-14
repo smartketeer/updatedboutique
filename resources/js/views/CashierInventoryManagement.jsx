@@ -113,12 +113,35 @@ const CashierInventoryManagement = () => {
 
     const handleRequestSubmit = async (e) => {
         e.preventDefault();
-        setRequestStatus('Item request submitted successfully!');
-        setTimeout(() => {
-            setIsRequestModalOpen(false);
-            setRequestStatus('');
-            setRequestForm({ sku: '', item_name: '', quantity: '', reason: '' });
-        }, 1500);
+        
+        // Find the active branch
+        const activeBranch = activeBranches.find(b => b.is_active);
+        const branchId = activeBranch ? activeBranch.id : (activeBranches[0] ? activeBranches[0].id : null);
+
+        if (!branchId) {
+            setRequestStatus('Error: No active branch found.');
+            return;
+        }
+
+        try {
+            await axios.post('/api/requisitions', {
+                branch_id: branchId,
+                sku: requestForm.sku,
+                item_name: requestForm.item_name,
+                quantity: requestForm.quantity,
+                reason: requestForm.reason
+            });
+            
+            setRequestStatus('Item request submitted successfully!');
+            setTimeout(() => {
+                setIsRequestModalOpen(false);
+                setRequestStatus('');
+                setRequestForm({ sku: '', item_name: '', quantity: '', reason: '' });
+            }, 1500);
+        } catch (err) {
+            setRequestStatus(err.response?.data?.message || 'Failed to submit request.');
+            setTimeout(() => setRequestStatus(''), 3000);
+        }
     };
 
     // ── Photo modal state ──

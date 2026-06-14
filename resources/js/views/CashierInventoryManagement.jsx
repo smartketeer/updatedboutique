@@ -1,7 +1,7 @@
 import React from 'react';
 import axios from 'axios';
 import { Dialog, Transition } from '@headlessui/react';
-import { Plus, X, Package, ShieldCheck, Trash2, Edit2, Search, Filter, Camera, Upload, ImagePlus, Star, Loader2, RefreshCw, Zap, ArrowRightLeft, LogOut, ClipboardList } from 'lucide-react';
+import { Plus, X, Package, ShieldCheck, Trash2, Edit2, Search, Filter, Camera, Upload, ImagePlus, Star, Loader2, RefreshCw, Zap, ArrowRightLeft, LogOut, ClipboardList, Copy, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 
@@ -18,6 +18,15 @@ const CashierInventoryManagement = () => {
     const [categories, setCategories] = React.useState([]);
     const [loading, setLoading] = React.useState(true);
     const [error, setError] = React.useState('');
+    const [copiedSku, setCopiedSku] = React.useState(null);
+
+    const handleCopySku = (sku) => {
+        if (!sku) return;
+        navigator.clipboard.writeText(sku).then(() => {
+            setCopiedSku(sku);
+            setTimeout(() => setCopiedSku(null), 1500);
+        });
+    };
 
     const [q, setQ] = React.useState('');
     const [debouncedQ, setDebouncedQ] = React.useState('');
@@ -847,7 +856,19 @@ const CashierInventoryManagement = () => {
                                                     </button>
                                                     <div>
                                                         <p className="text-xs font-medium text-[#818181] leading-none">{i.name}</p>
-                                                        <p className="text-[10px] text-[#a6a6a6] mt-1 font-medium uppercase tracking-tight">SKU: {i.sku || 'N/A'}</p>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleCopySku(i.sku)}
+                                                            title="Click to copy SKU"
+                                                            className="flex items-center gap-1 mt-1 group cursor-pointer bg-transparent border-none p-0 text-left"
+                                                        >
+                                                            <span className={`text-[10px] font-medium uppercase tracking-tight transition-colors ${copiedSku === i.sku ? 'text-emerald-500' : 'text-[#a6a6a6] group-hover:text-[#818181]'}`}>SKU: {i.sku || 'N/A'}</span>
+                                                            {copiedSku === i.sku ? (
+                                                                <Check size={10} className="text-emerald-500 shrink-0" />
+                                                            ) : (
+                                                                <Copy size={10} className="text-[#cbcbcb] group-hover:text-[#818181] shrink-0 transition-colors" />
+                                                            )}
+                                                        </button>
                                                     </div>
                                                 </div>
                                             </td>

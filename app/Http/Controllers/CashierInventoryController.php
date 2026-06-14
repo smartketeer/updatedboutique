@@ -49,7 +49,28 @@ class CashierInventoryController extends Controller
     {
         $validated = $request->validate([
             'category_id' => 'required|exists:categories,id',
-            'name' => 'required|string',
+            'name' => [
+                'required',
+                'string',
+                function ($attribute, $value, $fail) {
+                    $existsInLocal = \App\Models\Item::whereRaw('LOWER(name) = ?', [strtolower($value)])->exists();
+                    if ($existsInLocal) {
+                        $fail('This item name already exists in the POS system.');
+                        return;
+                    }
+                    try {
+                        $existsInBodega = \Illuminate\Support\Facades\DB::connection('bodega')
+                            ->table('items')
+                            ->whereRaw('LOWER(name) = ?', [strtolower($value)])
+                            ->exists();
+                        if ($existsInBodega) {
+                            $fail('This item name already exists in the Bodega system.');
+                        }
+                    } catch (\Exception $e) {
+                        // ignore connection failure
+                    }
+                }
+            ],
             'sku' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'cost' => 'required|numeric|min:0',

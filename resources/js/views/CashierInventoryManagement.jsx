@@ -1,7 +1,7 @@
 import React from 'react';
 import axios from 'axios';
 import { Dialog, Transition } from '@headlessui/react';
-import { Plus, X, Package, ShieldCheck, Trash2, Edit2, Search, Filter, Camera, Upload, ImagePlus, Star, Loader2, RefreshCw, Zap, ArrowRightLeft, LogOut } from 'lucide-react';
+import { Plus, X, Package, ShieldCheck, Trash2, Edit2, Search, Filter, Camera, Upload, ImagePlus, Star, Loader2, RefreshCw, Zap, ArrowRightLeft, LogOut, ClipboardList } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
 
@@ -65,6 +65,21 @@ const CashierInventoryManagement = () => {
     const [pullOutItem, setPullOutItem] = React.useState(null);
     const [pullOutForm, setPullOutForm] = React.useState({ quantity: '', reason: '' });
     const [transferPullOutError, setTransferPullOutError] = React.useState('');
+
+    // ── Request Item state ──
+    const [isRequestModalOpen, setIsRequestModalOpen] = React.useState(false);
+    const [requestForm, setRequestForm] = React.useState({ item_name: '', quantity: '', reason: '' });
+    const [requestStatus, setRequestStatus] = React.useState('');
+
+    const handleRequestSubmit = async (e) => {
+        e.preventDefault();
+        setRequestStatus('Item request submitted successfully!');
+        setTimeout(() => {
+            setIsRequestModalOpen(false);
+            setRequestStatus('');
+            setRequestForm({ item_name: '', quantity: '', reason: '' });
+        }, 1500);
+    };
 
     // ── Photo modal state ──
     const [isPhotoModalOpen, setIsPhotoModalOpen] = React.useState(false);
@@ -710,6 +725,14 @@ const CashierInventoryManagement = () => {
                         >
                             <ArrowRightLeft size={14} />
                             {isTransferMode ? 'Cancel Transfer/Pull Out' : 'Transfer/Pull Out'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setIsRequestModalOpen(true)}
+                            className="h-9 px-3 text-xs font-semibold bg-white border border-[#cbcbcb] text-[#818181] rounded-xl hover:bg-[#dddddd] inline-flex items-center gap-2 shadow-sm transition-colors"
+                        >
+                            <ClipboardList size={14} />
+                            Request Item
                         </button>
                         <button
                             type="button"
@@ -1394,6 +1417,68 @@ const CashierInventoryManagement = () => {
                 </Dialog>
             </Transition>
 
+            {/* ── Request Item Modal ── */}
+            <Transition appear show={isRequestModalOpen} as={React.Fragment}>
+                <Dialog as="div" className="relative z-[100]" onClose={() => setIsRequestModalOpen(false)}>
+                    <Transition.Child as={React.Fragment} enter="ease-out duration-200" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-150" leaveFrom="opacity-100" leaveTo="opacity-0">
+                        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
+                    </Transition.Child>
+                    <div className="fixed inset-0 overflow-y-auto">
+                        <div className="flex min-h-full items-center justify-center p-4">
+                            <Transition.Child as={React.Fragment} enter="ease-out duration-200" enterFrom="opacity-0 scale-95" enterTo="opacity-100 scale-100" leave="ease-in duration-150" leaveFrom="opacity-100 scale-100" leaveTo="opacity-0 scale-95">
+                                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white text-left align-middle shadow-xl transition-all border border-[#cbcbcb]">
+                                    <div className="px-6 py-4 border-b border-[#cbcbcb] flex items-center justify-between">
+                                        <Dialog.Title className="text-lg font-medium text-[#818181]">Request Item</Dialog.Title>
+                                        <button type="button" onClick={() => setIsRequestModalOpen(false)} className="text-[#a6a6a6] hover:text-[#818181] transition-colors"><X size={20} /></button>
+                                    </div>
+                                    <div className="px-6 py-4">
+                                        {requestStatus && <div className="mb-4 p-3 bg-[#e8f5e9] text-[#2e7d32] rounded-lg text-sm border border-[#c8e6c9]">{requestStatus}</div>}
+                                        <form onSubmit={handleRequestSubmit} className="space-y-4">
+                                            <div>
+                                                <label className="block text-[11px] font-semibold text-[#a6a6a6] uppercase tracking-wider mb-1.5">Item Name</label>
+                                                <input
+                                                    type="text"
+                                                    required
+                                                    value={requestForm.item_name}
+                                                    onChange={(e) => setRequestForm({ ...requestForm, item_name: e.target.value })}
+                                                    placeholder="e.g. New Product Name"
+                                                    className="w-full h-10 px-3 rounded-xl border border-[#cbcbcb] text-sm text-[#818181] bg-white focus:outline-none focus:border-[#818181] transition-colors"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[11px] font-semibold text-[#a6a6a6] uppercase tracking-wider mb-1.5">Quantity</label>
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    required
+                                                    value={requestForm.quantity}
+                                                    onChange={(e) => setRequestForm({ ...requestForm, quantity: e.target.value })}
+                                                    placeholder="1"
+                                                    className="w-full h-10 px-3 rounded-xl border border-[#cbcbcb] text-sm text-[#818181] bg-white focus:outline-none focus:border-[#818181] transition-colors"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[11px] font-semibold text-[#a6a6a6] uppercase tracking-wider mb-1.5">Reason for Request</label>
+                                                <textarea
+                                                    required
+                                                    rows="3"
+                                                    value={requestForm.reason}
+                                                    onChange={(e) => setRequestForm({ ...requestForm, reason: e.target.value })}
+                                                    placeholder="Why is this item needed?"
+                                                    className="w-full p-3 rounded-xl border border-[#cbcbcb] text-sm text-[#818181] bg-white focus:outline-none focus:border-[#818181] transition-colors resize-none"
+                                                />
+                                            </div>
+                                            <div className="pt-2">
+                                                <button type="submit" className="w-full h-10 rounded-xl bg-[#818181] text-white text-[12px] font-semibold shadow-sm hover:bg-[#a6a6a6] transition-colors">Submit Request</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </Dialog.Panel>
+                            </Transition.Child>
+                        </div>
+                    </div>
+                </Dialog>
+            </Transition>
 
             {/* ── Universal Delete Confirmation ── */}
             <ConfirmDeleteModal

@@ -111,8 +111,24 @@ const CashierInventoryManagement = () => {
         return () => clearTimeout(id);
     }, [requestForm.sku, items]);
 
+    const isItemNotFound = requestForm.item_name === 'Item not found' || requestForm.item_name === 'Error searching item';
+    const isItemValid = requestForm.sku.trim() !== '' && requestForm.item_name !== '' && !isItemNotFound && !isSearchingSku;
+
     const handleRequestSubmit = async (e) => {
         e.preventDefault();
+
+        // Block submission if item was not found
+        if (!requestForm.item_name || isItemNotFound) {
+            setRequestStatus('Error: The SKU you entered does not match any item in inventory. Please check the SKU and try again.');
+            setTimeout(() => setRequestStatus(''), 4000);
+            return;
+        }
+
+        if (isSearchingSku) {
+            setRequestStatus('Error: Still searching for the item. Please wait.');
+            setTimeout(() => setRequestStatus(''), 3000);
+            return;
+        }
         
         // Find the active branch
         const activeBranch = activeBranches.find(b => b.is_active);
@@ -1507,7 +1523,7 @@ const CashierInventoryManagement = () => {
                                         <button type="button" onClick={() => setIsRequestModalOpen(false)} className="text-[#a6a6a6] hover:text-[#818181] transition-colors"><X size={20} /></button>
                                     </div>
                                     <div className="px-6 py-4">
-                                        {requestStatus && <div className="mb-4 p-3 bg-[#e8f5e9] text-[#2e7d32] rounded-lg text-sm border border-[#c8e6c9]">{requestStatus}</div>}
+                                        {requestStatus && <div className={`mb-4 p-3 rounded-lg text-sm border ${requestStatus.startsWith('Error') ? 'bg-red-50 text-red-600 border-red-100' : 'bg-[#e8f5e9] text-[#2e7d32] border-[#c8e6c9]'}`}>{requestStatus}</div>}
                                         <form onSubmit={handleRequestSubmit} className="space-y-4">
                                             <div>
                                                 <label className="block text-[11px] font-semibold text-[#a6a6a6] uppercase tracking-wider mb-1.5">SKU</label>
@@ -1530,8 +1546,9 @@ const CashierInventoryManagement = () => {
                                                     readOnly
                                                     value={requestForm.item_name}
                                                     placeholder="Item name will appear here"
-                                                    className="w-full h-10 px-3 rounded-xl border border-[#cbcbcb] text-sm text-[#a6a6a6] bg-[#f8f8f8] focus:outline-none transition-colors cursor-not-allowed"
+                                                    className={`w-full h-10 px-3 rounded-xl border text-sm bg-[#f8f8f8] focus:outline-none transition-colors cursor-not-allowed ${isItemNotFound ? 'border-red-400 text-red-500' : 'border-[#cbcbcb] text-[#a6a6a6]'}`}
                                                 />
+                                                {isItemNotFound && <p className="mt-1 text-xs text-red-500 font-medium">This SKU does not exist in the inventory. Please verify the SKU.</p>}
                                             </div>
                                             <div>
                                                 <label className="block text-[11px] font-semibold text-[#a6a6a6] uppercase tracking-wider mb-1.5">Quantity</label>
@@ -1560,7 +1577,7 @@ const CashierInventoryManagement = () => {
                                                 </select>
                                             </div>
                                             <div className="pt-2">
-                                                <button type="submit" className="w-full h-10 rounded-xl bg-[#818181] text-white text-[12px] font-semibold shadow-sm hover:bg-[#a6a6a6] transition-colors">Submit Request</button>
+                                                <button type="submit" disabled={!isItemValid} className="w-full h-10 rounded-xl bg-[#818181] text-white text-[12px] font-semibold shadow-sm hover:bg-[#a6a6a6] disabled:opacity-50 disabled:cursor-not-allowed transition-colors">Submit Request</button>
                                             </div>
                                         </form>
                                     </div>

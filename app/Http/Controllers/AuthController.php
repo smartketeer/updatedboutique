@@ -41,6 +41,10 @@ class AuthController extends Controller
         try {
             $token = $user->createToken('auth_token')->plainTextToken;
 
+            // Also log them into the web session so Bodega can share it
+            \Illuminate\Support\Facades\Auth::guard('web')->login($user);
+            $request->session()->regenerate();
+
             \Log::info('User logged in: '.$user->email, [
                 'role' => $user->role,
                 'ip'   => $request->ip(),
@@ -115,6 +119,11 @@ class AuthController extends Controller
         ]);
 
         $user->currentAccessToken()->delete();
+
+        // Also log them out of the web session
+        \Illuminate\Support\Facades\Auth::guard('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
         return response()->json(['message' => 'Logged out successfully']);
     }

@@ -56,6 +56,18 @@ Route::get('storage/{path}', function ($path) {
     ]);
 })->where('path', '.*');
 
+Route::get('/debug-pos', function () {
+    return response()->json([
+        'expected_cookie_name' => config('session.cookie'),
+        'received_cookie' => request()->cookie(config('session.cookie')) ? 'YES' : 'NO',
+        'auth_check' => auth()->check() ? 'YES' : 'NO',
+        'auth_id' => auth()->id(),
+        'session_id' => session()->getId(),
+        'session_driver' => config('session.driver'),
+        'app_key_match' => config('app.key') === 'base64:T3xyyd+wBc0cVlb7WA+yp57wAethBCvAZ5XcnAI1aeo=' ? 'YES' : 'NO'
+    ]);
+});
+
 Route::get('/{any}', function () {
     return view('welcome');
 })->where('any', '.*');

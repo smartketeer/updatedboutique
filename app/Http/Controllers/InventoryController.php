@@ -19,7 +19,8 @@ class InventoryController extends Controller
         if ($user && $user->role === 'staff') {
             // Prefer the session-selected branch from cache
             try {
-                $tokenId = $user->currentAccessToken()->id;
+                $token = $user->currentAccessToken();
+                $tokenId = ($token instanceof \Laravel\Sanctum\TransientToken) ? session()->getId() : $token->id;
                 $resolved = BranchResolver::getActiveBranchId($user, $tokenId);
                 if ($resolved) {
                     return $resolved;

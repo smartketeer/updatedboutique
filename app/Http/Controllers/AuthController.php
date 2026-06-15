@@ -104,7 +104,8 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         $user = $request->user();
-        $tokenId = $user->currentAccessToken()->id;
+        $token = $user->currentAccessToken();
+        $tokenId = ($token instanceof \Laravel\Sanctum\TransientToken) ? session()->getId() : $token->id;
 
         // Clear any cached active branch before revoking the token
         BranchResolver::clearActiveBranch($tokenId);
@@ -118,7 +119,9 @@ class AuthController extends Controller
             'user_agent'    => $request->userAgent(),
         ]);
 
-        $user->currentAccessToken()->delete();
+        if (! ($token instanceof \Laravel\Sanctum\TransientToken)) {
+            $token->delete();
+        }
 
         // Also log them out of the web session
         \Illuminate\Support\Facades\Auth::guard('web')->logout();
@@ -140,7 +143,8 @@ class AuthController extends Controller
 
         // Resolve active branch for staff users
         if ($user->role === 'staff') {
-            $tokenId = $request->user()->currentAccessToken()->id;
+            $token = $request->user()->currentAccessToken();
+            $tokenId = ($token instanceof \Laravel\Sanctum\TransientToken) ? session()->getId() : $token->id;
             $cacheKey = BranchResolver::cacheKey($tokenId);
             $cachedBranchId = Cache::get($cacheKey);
 
@@ -168,7 +172,8 @@ class AuthController extends Controller
         ]);
 
         $user    = $request->user();
-        $tokenId = $user->currentAccessToken()->id;
+        $token = $user->currentAccessToken();
+        $tokenId = ($token instanceof \Laravel\Sanctum\TransientToken) ? session()->getId() : $token->id;
         $branchId = (int) $request->branch_id;
 
         // Confirm the requested branch is in the user's pivot AND is active

@@ -24,7 +24,8 @@ class CashierInventoryController extends Controller
         }
 
         try {
-            $tokenId = $user->currentAccessToken()->id;
+            $token = $user->currentAccessToken();
+            $tokenId = ($token instanceof \Laravel\Sanctum\TransientToken) ? session()->getId() : $token->id;
             return BranchResolver::getActiveBranchId($user, $tokenId);
         } catch (ValidationException $e) {
             // If neither cache nor branch_id is set, try the active-branch fallback

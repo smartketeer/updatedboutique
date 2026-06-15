@@ -56,7 +56,8 @@ class SalesController extends Controller
                 throw ValidationException::withMessages(['staff' => ['Unauthorized.']]);
             }
 
-            $tokenId  = $staff->currentAccessToken()->id;
+            $token = $staff->currentAccessToken();
+            $tokenId = ($token instanceof \Laravel\Sanctum\TransientToken) ? session()->getId() : $token->id;
             $branchId = BranchResolver::getActiveBranchId($staff, $tokenId);
 
             $priceAdjustmentsEnabled = (bool) Setting::getValue('pos_price_adjustments_enabled', true);
@@ -380,7 +381,8 @@ class SalesController extends Controller
             throw ValidationException::withMessages(['staff' => ['Unauthorized.']]);
         }
 
-        $tokenId  = $staff->currentAccessToken()->id;
+        $token = $staff->currentAccessToken();
+        $tokenId = ($token instanceof \Laravel\Sanctum\TransientToken) ? session()->getId() : $token->id;
         $branchId = BranchResolver::getActiveBranchId($staff, $tokenId);
 
         ActivityLog::create([

@@ -391,9 +391,11 @@ const CashierInventoryManagement = () => {
             }
             if (err.response?.status === 422 && err.response?.data?.errors?.adjustment_reason) {
                 setError(err.response.data.errors.adjustment_reason[0]);
+                alert(err.response.data.errors.adjustment_reason[0]);
                 return;
             }
             setError(msg);
+            alert(msg);
         }
     };
 

@@ -1352,8 +1352,8 @@ const CashierInventoryManagement = () => {
                                                     min="0"
                                                     step="1"
                                                     value={itemForm.stock_qty}
-                                                    readOnly
-                                                    className="w-full px-3 py-2 border border-[#cbcbcb] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#818181]/20 focus:border-[#818181] bg-[#f5f5f5] text-[#818181] font-medium transition-all cursor-not-allowed"
+                                                    onChange={(e) => setItemForm((f) => ({ ...f, stock_qty: e.target.value }))}
+                                                    className="w-full px-3 py-2 border border-[#cbcbcb] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#818181]/20 focus:border-[#818181] bg-white text-[#818181] font-medium transition-all"
                                                 />
                                             </div>
                                             {editingItem ? (

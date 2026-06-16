@@ -55,7 +55,11 @@ export const useCartStore = create((set, get) => ({
         set({ items: get().items.filter((i) => i.id !== itemId) });
     },
     updateQuantity: (itemId, quantity) => {
-        if (quantity < 1) return;
+        if (quantity < 1) {
+            // Remove the item when quantity reaches 0
+            set({ items: get().items.filter((i) => i.id !== itemId) });
+            return;
+        }
         set({
             items: get().items.map((i) =>
                 i.id === itemId ? { ...i, quantity } : i

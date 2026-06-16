@@ -138,7 +138,11 @@ class StockManagementController extends Controller
             }
 
             $stock->update(['quantity' => $newQty]);
-            $item->update(['stock_qty' => (int) $item->stock_qty + $delta]);
+            if ($delta > 0) {
+                $item->increment('stock_qty', $delta);
+            } elseif ($delta < 0) {
+                $item->decrement('stock_qty', abs($delta));
+            }
 
             $meta = [];
             if ($reason === 'adjustment') {

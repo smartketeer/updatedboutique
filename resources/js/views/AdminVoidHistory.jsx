@@ -30,7 +30,10 @@ const AdminVoidHistory = () => {
             const params = new URLSearchParams();
             params.set('reason', 'cashier_transfer_out,cashier_transfer_in,cashier_pull_out');
             params.set('limit', '500'); // Load a lot, then filter in frontend for simplicity since stock management doesn't have strict pagination yet
-            if (transfersDate) params.set('from', transfersDate); // Assuming single date filters 'from' for simplicity or 'date'
+            if (transfersDate) {
+                params.set('from', transfersDate);
+                params.set('to', transfersDate); // Scope to the exact selected date
+            }
             
             const res = await axios.get(`/api/stock-management/movements?${params.toString()}`);
             let data = res.data || [];

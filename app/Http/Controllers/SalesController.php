@@ -44,7 +44,7 @@ class SalesController extends Controller
             'custom_items.*.quantity' => 'required|integer|min:1',
             'custom_items.*.unit_price' => 'required|numeric|min:0',
             'custom_items.*.reason' => 'nullable|string|max:255',
-            'payment_method' => 'required|string|in:cash,card,gcash',
+            'payment_method' => 'required|string|in:cash,card,gcash,maya',
             'discount' => 'nullable|numeric|min:0',
             'cashier_pin' => 'nullable|string',
             'override_approval_token' => 'nullable|string',
@@ -177,7 +177,7 @@ class SalesController extends Controller
                         'branch_id' => $branchId,
                         'actor_user_id' => $staff->id,
                         'change_qty' => -$quantity,
-                        'new_qty' => (int) $stock->quantity,
+                        'new_qty' => $availableQty - $quantity,
                         'reason' => 'sale',
                     ]);
                 }
@@ -307,9 +307,11 @@ class SalesController extends Controller
             // Loyalty points update
             if ($request->client_id) {
                 $client = Client::find($request->client_id);
-                // 1 point per 100 pesos
-                $points = floor($finalAmount / 100);
-                $client->increment('loyalty_points', $points);
+                if ($client) {
+                    // 1 point per 100 pesos
+                    $points = floor($finalAmount / 100);
+                    $client->increment('loyalty_points', $points);
+                }
             }
 
             // Gcash QR handling (simulation)

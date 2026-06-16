@@ -424,6 +424,7 @@ class CashierInventoryController extends Controller
                 return response()->json(['message' => 'Insufficient stock for pull out.'], 422);
             }
 
+            $newStockQty = (int) $stock->quantity - $qty;
             $stock->decrement('quantity', $qty);
             $item->decrement('stock_qty', $qty);
 
@@ -432,7 +433,7 @@ class CashierInventoryController extends Controller
                 'branch_id' => $branchId,
                 'actor_user_id' => $user?->id,
                 'change_qty' => -$qty,
-                'new_qty' => $stock->quantity,
+                'new_qty' => $newStockQty,
                 'reason' => 'cashier_pull_out',
                 'notes' => trim($validated['reason']),
             ]);
@@ -499,6 +500,8 @@ class CashierInventoryController extends Controller
                     ['quantity' => 0]
                 );
 
+            $fromNewQty = (int) $fromStock->quantity - $qty;
+            $toNewQty = (int) $toStock->quantity + $qty;
             $fromStock->decrement('quantity', $qty);
             $toStock->increment('quantity', $qty);
 
@@ -508,7 +511,7 @@ class CashierInventoryController extends Controller
                 'branch_id' => $fromBranchId,
                 'actor_user_id' => $user?->id,
                 'change_qty' => -$qty,
-                'new_qty' => $fromStock->quantity,
+                'new_qty' => $fromNewQty,
                 'reason' => 'cashier_transfer_out',
                 'notes' => trim($validated['reason']),
                 'meta' => ['to_branch_id' => $toBranchId]
@@ -520,7 +523,7 @@ class CashierInventoryController extends Controller
                 'branch_id' => $toBranchId,
                 'actor_user_id' => $user?->id,
                 'change_qty' => $qty,
-                'new_qty' => $toStock->quantity,
+                'new_qty' => $toNewQty,
                 'reason' => 'cashier_transfer_in',
                 'notes' => trim($validated['reason']),
                 'meta' => ['from_branch_id' => $fromBranchId]

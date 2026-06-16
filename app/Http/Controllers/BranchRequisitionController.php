@@ -80,6 +80,22 @@ class BranchRequisitionController extends Controller
     public function notifications(Request $request)
     {
         $branchId = $request->query('branch_id');
+        if (!$branchId) {
+            $user = $request->user();
+            if ($user && $user->role === 'staff') {
+                try {
+                    $token = $user->currentAccessToken();
+                    $tokenId = ($token instanceof \Laravel\Sanctum\TransientToken) ? session()->getId() : $token->id;
+                    $branchId = \App\Services\BranchResolver::getActiveBranchId($user, $tokenId);
+                } catch (\Exception $e) {
+                    // Ignore
+                }
+                if (!$branchId) {
+                    $fallback = \App\Models\Branch::query()->where('is_active', true)->orderBy('id')->value('id');
+                    $branchId = $fallback ? (int) $fallback : 0;
+                }
+            }
+        }
 
         $notifications = BranchRequisition::with(['branch'])
             ->where('branch_id', $branchId)
@@ -93,6 +109,30 @@ class BranchRequisitionController extends Controller
     public function markNotified(Request $request, $id)
     {
         $requisition = BranchRequisition::findOrFail($id);
+        
+        $branchId = $request->header('X-Branch-ID');
+        if (!$branchId) {
+            $user = $request->user();
+            if ($user && $user->role === 'staff') {
+                try {
+                    $token = $user->currentAccessToken();
+                    $tokenId = ($token instanceof \Laravel\Sanctum\TransientToken) ? session()->getId() : $token->id;
+                    $branchId = \App\Services\BranchResolver::getActiveBranchId($user, $tokenId);
+                } catch (\Exception $e) {
+                    // Ignore
+                }
+                if (!$branchId) {
+                    $fallback = \App\Models\Branch::query()->where('is_active', true)->orderBy('id')->value('id');
+                    $branchId = $fallback ? (int) $fallback : 0;
+                }
+            }
+        }
+        
+        // Add basic security check to ensure they can only mark their own branch's notifications
+        if ($branchId && $requisition->branch_id != $branchId) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
         $requisition->update(['is_notified' => true]);
 
         return response()->json(['message' => 'Notification marked as read']);

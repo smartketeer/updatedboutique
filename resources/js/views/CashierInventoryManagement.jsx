@@ -81,54 +81,6 @@ const CashierInventoryManagement = () => {
     const [requestStatus, setRequestStatus] = React.useState('');
     const [isSearchingSku, setIsSearchingSku] = React.useState(false);
 
-    // ── Notifications state ──
-    const [notifications, setNotifications] = React.useState([]);
-    const [isNotificationDropdownOpen, setIsNotificationDropdownOpen] = React.useState(false);
-
-    React.useEffect(() => {
-        const fetchNotifications = async () => {
-            const activeBranch = activeBranches.find(b => b.is_active);
-            const branchId = activeBranch ? activeBranch.id : (activeBranches[0] ? activeBranches[0].id : null);
-            if (!branchId) return;
-
-            try {
-                const res = await axios.get('/api/requisitions/notifications', {
-                    params: { branch_id: branchId }
-                });
-                if (res.data && res.data.length > 0) {
-                    setNotifications(res.data);
-                }
-            } catch (err) {
-                console.error("Failed to fetch notifications", err);
-            }
-        };
-
-        const intervalId = setInterval(fetchNotifications, 15000);
-        if (activeBranches.length > 0) {
-            fetchNotifications();
-        }
-
-        return () => clearInterval(intervalId);
-    }, [activeBranches]);
-
-    const handleDismissNotification = async (notificationId) => {
-        try {
-            const activeBranch = activeBranches.find(b => b.is_active);
-            const branchId = activeBranch ? activeBranch.id : (activeBranches[0] ? activeBranches[0].id : null);
-            await axios.post(`/api/requisitions/${notificationId}/mark-notified`, {}, {
-                headers: { 'X-Branch-ID': branchId }
-            });
-            
-            const remaining = notifications.filter(n => n.id !== notificationId);
-            setNotifications(remaining);
-            if (remaining.length === 0) {
-                setIsNotificationDropdownOpen(false);
-            }
-        } catch (err) {
-            console.error("Failed to mark as notified", err);
-        }
-    };
-
     // ── SKU Automation Logic ──
     const categoryCodeMap = {
         'Beauty & Personal Care': 'BTY',
@@ -853,48 +805,6 @@ const CashierInventoryManagement = () => {
                     </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
-                    
-                    <div className="relative">
-                        <button
-                            type="button"
-                            onClick={() => setIsNotificationDropdownOpen(!isNotificationDropdownOpen)}
-                            className="relative p-2 rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-                        >
-                            <Bell size={24} />
-                            {notifications.length > 0 && (
-                                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white"></span>
-                            )}
-                        </button>
-                        
-                        {isNotificationDropdownOpen && notifications.length > 0 && (
-                            <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden z-50">
-                                <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-                                    <h3 className="font-bold text-gray-900">Notifications</h3>
-                                    <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded-full">{notifications.length} new</span>
-                                </div>
-                                <div className="max-h-96 overflow-y-auto">
-                                    {notifications.map(notif => (
-                                        <div key={notif.id} className="p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                                            <p className="text-sm text-gray-800 mb-2">
-                                                Your request for <span className="font-bold">{notif.quantity}x {notif.item_name}</span> was <span className="text-red-600 font-bold">rejected</span>.
-                                            </p>
-                                            <button
-                                                onClick={() => handleDismissNotification(notif.id)}
-                                                className="text-xs font-bold text-blue-600 hover:text-blue-700"
-                                            >
-                                                Mark as read
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                        {isNotificationDropdownOpen && notifications.length === 0 && (
-                            <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden z-50 p-4 text-center">
-                                <p className="text-sm text-gray-500">No new notifications.</p>
-                            </div>
-                        )}
-                    </div>
 
                     {accessToken ? (
                         <button

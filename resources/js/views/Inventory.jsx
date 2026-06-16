@@ -177,9 +177,8 @@ const Inventory = () => {
 
             if (!normalizedSearch) return true;
             const name = String(item.name || '').toLowerCase();
-            const sku = String(item.sku || '').toLowerCase();
             const categoryName = String(item.category?.name || '').toLowerCase();
-            return name.includes(normalizedSearch) || sku.includes(normalizedSearch) || categoryName.includes(normalizedSearch);
+            return name.includes(normalizedSearch) || categoryName.includes(normalizedSearch);
         });
 
         const sortDir = stockSort === 'desc' ? -1 : 1;
@@ -211,8 +210,8 @@ const Inventory = () => {
 
     const exportItemsToCsv = (rows) => {
         try {
+            const header = ['Name', 'Category', 'Price', 'Stock', 'Type'];
             const safeRows = Array.isArray(rows) ? rows : [];
-            const header = ['Name', 'SKU', 'Category', 'Price', 'Stock', 'Type'];
             const escape = (value) => {
                 const s = value == null ? '' : String(value);
                 if (/[",\n]/.test(s)) return `"${s.replaceAll('"', '""')}"`;
@@ -223,12 +222,11 @@ const Inventory = () => {
                 ...safeRows.map((r) =>
                     [
                         escape(r?.name),
-                        escape(r?.sku || ''),
                         escape(r?.category?.name || ''),
                         escape(r?.price ?? ''),
                         escape(r?.stock_qty ?? ''),
                         escape('Product'),
-                    ].join(','),
+                    ].join(',')
                 ),
             ];
             const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
@@ -880,7 +878,6 @@ const Inventory = () => {
                         <thead className="sticky top-0 z-10">
                             <tr className="bg-white text-[#a6a6a6] text-xs font-semibold uppercase tracking-widest border-b border-[#cbcbcb]">
                                 <th className="px-6 py-4">Name</th>
-                                <th className="px-6 py-4">SKU</th>
                                 <th className="px-6 py-4">Category</th>
                                 <th className="px-6 py-4">Price</th>
                                 <th className="px-6 py-4">Stock</th>
@@ -948,13 +945,9 @@ const Inventory = () => {
                                                     </button>
                                                     <div>
                                                         <p className="text-sm font-semibold text-[#818181] leading-none">{item.name}</p>
-                                                        <p className="text-[10px] font-medium text-[#a6a6a6] uppercase tracking-widest mt-1">
-                                                            SKU: {item.sku || EM_DASH}
-                                                        </p>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 text-xs font-medium text-[#a6a6a6]">{item.sku || EM_DASH}</td>
                                             <td className="px-6 py-4">
                                                 <span className="text-xs font-semibold text-[#3f3f46] px-2.5 py-1 bg-white rounded-md border border-[#cbcbcb] uppercase tracking-tighter">
                                                     {item.category?.name}

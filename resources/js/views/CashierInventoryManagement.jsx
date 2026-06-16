@@ -18,15 +18,6 @@ const CashierInventoryManagement = () => {
     const [categories, setCategories] = React.useState([]);
     const [loading, setLoading] = React.useState(true);
     const [error, setError] = React.useState('');
-    const [copiedSku, setCopiedSku] = React.useState(null);
-
-    const handleCopySku = (sku) => {
-        if (!sku) return;
-        navigator.clipboard.writeText(sku).then(() => {
-            setCopiedSku(sku);
-            setTimeout(() => setCopiedSku(null), 1500);
-        });
-    };
 
     const [q, setQ] = React.useState('');
     const [debouncedQ, setDebouncedQ] = React.useState('');
@@ -81,119 +72,16 @@ const CashierInventoryManagement = () => {
     const [requestStatus, setRequestStatus] = React.useState('');
     const [isSearchingSku, setIsSearchingSku] = React.useState(false);
 
-    // ── SKU Automation Logic ──
-    const categoryCodeMap = {
-        'Beauty & Personal Care': 'BTY',
-        'School & Office Supplies': 'SCH',
-        'Apparel & Fashion': 'APP',
-        'Footwear': 'FTW',
-    };
+    // ── Request Item state ──
 
-    const extractNameParts = (name) => {
-        const cleanName = name.replace(/[^A-Za-z0-9\s]/g, '');
-        const words = cleanName.trim().split(/\s+/).filter(Boolean);
-        const parts = words.slice(0, 3).map(word => word.substring(0, 3).toUpperCase());
-        return parts;
-    };
-
-    const getCategoryCode = (categoryId) => {
-        const category = categories.find(cat => String(cat.id) === String(categoryId));
-        if (!category) return 'GEN';
-        
-        const categoryName = category.name.trim();
-        if (categoryCodeMap[categoryName]) {
-            return categoryCodeMap[categoryName];
-        }
-        
-        const cleanCatName = categoryName.replace(/[^A-Za-z0-9]/g, '');
-        const code = cleanCatName.substring(0, 3).toUpperCase().padEnd(3, 'X');
-        return code;
-    };
-
-    const getNextSequenceNumber = (categoryCode) => {
-        const pattern = `${categoryCode}-`;
-        const existingNumbers = new Set();
-        
-        items.forEach(item => {
-            if (item.sku && item.sku.startsWith(pattern)) {
-                const skuParts = item.sku.split('-');
-                const lastPart = skuParts[skuParts.length - 1];
-                if (/^\d{4}$/.test(lastPart)) {
-                    existingNumbers.add(parseInt(lastPart, 10));
-                }
-            }
-        });
-        
-        let randomNumber;
-        for (let i = 0; i < 1000; i++) {
-            randomNumber = Math.floor(Math.random() * 9999) + 1;
-            if (!existingNumbers.has(randomNumber)) break;
-        }
-        
-        return randomNumber;
-    };
-
-    React.useEffect(() => {
-        if (!editingItem) {
-            if (itemForm.name && itemForm.category_id) {
-                const categoryCode = getCategoryCode(itemForm.category_id);
-                const nameParts = extractNameParts(itemForm.name);
-                const itemSlug = nameParts.join('-');
-                const sequenceNumber = getNextSequenceNumber(categoryCode);
-                const sku = `${categoryCode}-${itemSlug}-${String(sequenceNumber).padStart(4, '0')}`;
-                setItemForm(prev => ({ ...prev, sku }));
-            } else {
-                setItemForm(prev => ({ ...prev, sku: '' }));
-            }
-        }
-    }, [itemForm.name, itemForm.category_id, categories, items, editingItem]);
-
-    React.useEffect(() => {
-        const fetchItemBySku = async () => {
-            if (!requestForm.sku.trim()) {
-                if (requestForm.item_name !== '') {
-                    setRequestForm(prev => ({ ...prev, item_name: '' }));
-                }
-                return;
-            }
-            const localMatch = items.find(i => i.sku === requestForm.sku.trim());
-            if (localMatch) {
-                setRequestForm(prev => ({ ...prev, item_name: localMatch.name }));
-                return;
-            }
-            setIsSearchingSku(true);
-            try {
-                const res = await axios.get('/api/inventory', { params: { q: requestForm.sku.trim() } });
-                const remoteItems = Array.isArray(res.data?.data) ? res.data.data : Array.isArray(res.data) ? res.data : [];
-                const exactMatch = remoteItems.find(i => i.sku === requestForm.sku.trim());
-                setRequestForm(prev => ({ ...prev, item_name: exactMatch ? exactMatch.name : 'Item not found' }));
-            } catch (err) {
-                setRequestForm(prev => ({ ...prev, item_name: 'Error searching item' }));
-            } finally {
-                setIsSearchingSku(false);
-            }
-        };
-
-        const id = setTimeout(fetchItemBySku, 400);
-        return () => clearTimeout(id);
-    }, [requestForm.sku, items]);
-
-    const isItemNotFound = requestForm.item_name === 'Item not found' || requestForm.item_name === 'Error searching item';
-    const isItemValid = requestForm.sku.trim() !== '' && requestForm.item_name !== '' && !isItemNotFound && !isSearchingSku;
+    const isItemValid = requestForm.sku !== '' && requestForm.item_name !== '';
 
     const handleRequestSubmit = async (e) => {
         e.preventDefault();
 
-        // Block submission if item was not found
-        if (!requestForm.item_name || isItemNotFound) {
-            setRequestStatus('Error: The SKU you entered does not match any item in inventory. Please check the SKU and try again.');
+        if (!requestForm.item_name) {
+            setRequestStatus('Error: Please select an item to request.');
             setTimeout(() => setRequestStatus(''), 4000);
-            return;
-        }
-
-        if (isSearchingSku) {
-            setRequestStatus('Error: Still searching for the item. Please wait.');
-            setTimeout(() => setRequestStatus(''), 3000);
             return;
         }
         
@@ -900,7 +788,7 @@ const CashierInventoryManagement = () => {
                                 value={q}
                                 onChange={(e) => setQ(e.target.value)}
                                 aria-label="Search items"
-                                placeholder={`Search item name, SKU, or category${ELLIPSIS}`}
+                                placeholder={`Search item name or category...`}
                                 className="w-full h-10 pl-10 pr-3 rounded-xl border border-[#cbcbcb] bg-white text-[12px] font-semibold text-[#818181] focus:outline-none focus:ring-2 focus:ring-[#818181]/20 focus:border-[#818181] transition-all"
                             />
                         </div>
@@ -963,19 +851,6 @@ const CashierInventoryManagement = () => {
                                                     </button>
                                                     <div>
                                                         <p className="text-xs font-medium text-[#818181] leading-none">{i.name}</p>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleCopySku(i.sku)}
-                                                            title="Click to copy SKU"
-                                                            className="flex items-center gap-1 mt-1 group cursor-pointer bg-transparent border-none p-0 text-left"
-                                                        >
-                                                            <span className={`text-[10px] font-medium uppercase tracking-tight transition-colors ${copiedSku === i.sku ? 'text-emerald-500' : 'text-[#a6a6a6] group-hover:text-[#818181]'}`}>SKU: {i.sku || 'N/A'}</span>
-                                                            {copiedSku === i.sku ? (
-                                                                <Check size={10} className="text-emerald-500 shrink-0" />
-                                                            ) : (
-                                                                <Copy size={10} className="text-[#cbcbcb] group-hover:text-[#818181] shrink-0 transition-colors" />
-                                                            )}
-                                                        </button>
                                                     </div>
                                                 </div>
                                             </td>
@@ -1209,26 +1084,14 @@ const CashierInventoryManagement = () => {
                                                 ))}
                                             </select>
                                         </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                            <div>
-                                                <label className="block text-xs font-semibold text-[#a6a6a6] mb-1">Name</label>
-                                                <input
-                                                    value={itemForm.name}
-                                                    onChange={(e) => setItemForm((f) => ({ ...f, name: e.target.value }))}
-                                                    className="w-full px-3 py-2 border border-[#cbcbcb] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#818181]/20 focus:border-[#818181] bg-white text-[#818181] font-medium transition-all"
-                                                    required
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-semibold text-[#a6a6a6] mb-1">SKU</label>
-                                                <input
-                                                    value={itemForm.sku}
-                                                    readOnly
-                                                    placeholder="Will be auto-generated"
-                                                    className="w-full px-3 py-2 border border-[#cbcbcb] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#818181]/20 focus:border-[#818181] text-[#818181] font-medium transition-all bg-[#f5f5f5] cursor-not-allowed"
-                                                />
-                                                <p className="text-[10px] text-[#a6a6a6] mt-0.5">Auto-generated by the system. Cannot be edited manually.</p>
-                                            </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold text-[#a6a6a6] mb-1">Name</label>
+                                            <input
+                                                value={itemForm.name}
+                                                onChange={(e) => setItemForm((f) => ({ ...f, name: e.target.value }))}
+                                                className="w-full px-3 py-2 border border-[#cbcbcb] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#818181]/20 focus:border-[#818181] bg-white text-[#818181] font-medium transition-all"
+                                                required
+                                            />
                                         </div>
                                         <div className={`grid grid-cols-1 gap-3 ${editingItem ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-3'}`}>
                                             <div>
@@ -1586,29 +1449,25 @@ const CashierInventoryManagement = () => {
                                         {requestStatus && <div className={`mb-4 p-3 rounded-lg text-sm border ${requestStatus.startsWith('Error') ? 'bg-red-50 text-red-600 border-red-100' : 'bg-[#e8f5e9] text-[#2e7d32] border-[#c8e6c9]'}`}>{requestStatus}</div>}
                                         <form onSubmit={handleRequestSubmit} className="space-y-4">
                                             <div>
-                                                <label className="block text-[11px] font-semibold text-[#a6a6a6] uppercase tracking-wider mb-1.5">SKU</label>
-                                                <input
-                                                    type="text"
+                                                <label className="block text-[11px] font-semibold text-[#a6a6a6] uppercase tracking-wider mb-1.5">Select Item</label>
+                                                <select
                                                     required
                                                     value={requestForm.sku}
-                                                    onChange={(e) => setRequestForm({ ...requestForm, sku: e.target.value })}
-                                                    placeholder="e.g. SKU-12345"
-                                                    className="w-full h-10 px-3 rounded-xl border border-[#cbcbcb] text-sm text-[#818181] bg-white focus:outline-none focus:border-[#818181] transition-colors"
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-[11px] font-semibold text-[#a6a6a6] uppercase tracking-wider mb-1.5 flex items-center gap-2">
-                                                    Item Name
-                                                    {isSearchingSku && <Loader2 size={12} className="animate-spin text-[#a6a6a6]" />}
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    readOnly
-                                                    value={requestForm.item_name}
-                                                    placeholder="Item name will appear here"
-                                                    className={`w-full h-10 px-3 rounded-xl border text-sm bg-[#f8f8f8] focus:outline-none transition-colors cursor-not-allowed ${isItemNotFound ? 'border-red-400 text-red-500' : 'border-[#cbcbcb] text-[#a6a6a6]'}`}
-                                                />
-                                                {isItemNotFound && <p className="mt-1 text-xs text-red-500 font-medium">This SKU does not exist in the inventory. Please verify the SKU.</p>}
+                                                    onChange={(e) => {
+                                                        const selectedItem = items.find(it => it.sku === e.target.value);
+                                                        if (selectedItem) {
+                                                            setRequestForm({ ...requestForm, sku: selectedItem.sku, item_name: selectedItem.name });
+                                                        } else {
+                                                            setRequestForm({ ...requestForm, sku: '', item_name: '' });
+                                                        }
+                                                    }}
+                                                    className="w-full h-10 px-3 rounded-xl border border-[#cbcbcb] text-sm text-[#818181] bg-white focus:outline-none focus:border-[#818181] transition-colors appearance-none"
+                                                >
+                                                    <option value="" disabled>Select an item...</option>
+                                                    {items.map(it => (
+                                                        <option key={it.id} value={it.sku}>{it.name}</option>
+                                                    ))}
+                                                </select>
                                             </div>
                                             <div>
                                                 <label className="block text-[11px] font-semibold text-[#a6a6a6] uppercase tracking-wider mb-1.5">Quantity</label>

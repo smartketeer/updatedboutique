@@ -313,7 +313,6 @@ const POSTerminal = () => {
     const [discount, setDiscount] = useState(0);
     const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
     const [lastSale, setLastSale] = useState(null);
-    const [skuSearch, setSkuSearch] = useState('');
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState('cash');
@@ -424,27 +423,6 @@ const POSTerminal = () => {
         cartIdsRef.current = standardCartItems.map((i) => i.id).filter((id) => id != null);
     }, [standardCartItems]);
 
-    const handleSkuScan = async (e) => {
-        e.preventDefault();
-        const sku = String(skuSearch || '').trim();
-        if (!sku) return;
-        try {
-            const res = await axios.get('/api/inventory/lookup', { params: { sku } });
-            if (res?.data) {
-                handleAddToCart(res.data);
-                setSkuSearch('');
-                setSearch('');
-                return;
-            }
-            if (/^[a-zA-Z0-9_-]{5,}$/.test(sku)) {
-                setStockNotice('Barcode not found: ' + sku);
-            }
-        } catch {
-            if (/^[a-zA-Z0-9_-]{5,}$/.test(sku)) {
-                setStockNotice('Barcode not found: ' + sku);
-            }
-        }
-    };
 
     const loadItemsPage = React.useCallback(
         async (targetPage, opts = {}) => {
@@ -847,25 +825,20 @@ const POSTerminal = () => {
                 {/* Mobile-only sticky bar */}
                 <div className="lg:hidden sticky top-16 z-30 bg-[#dddddd] pt-2 pb-3 mb-4 -mt-2">
                     <div className="flex flex-col gap-3 px-1">
-                        <form onSubmit={handleSkuScan} className="relative">
+                        <div className="relative">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-[#cbcbcb]" size={18} />
                             <input
                                 type="text"
                                 aria-label="Search products"
-                                placeholder="Scan barcode or search products..."
-                                value={skuSearch || search}
+                                placeholder="Search products..."
+                                value={search}
                                 onChange={(e) => {
-                                    const v = e.target.value;
-                                    setSkuSearch(v);
-                                    setSearch(v);
+                                    setSearch(e.target.value);
                                     setPage(1);
                                 }}
                                 className="w-full h-12 pl-12 pr-4 rounded-2xl border border-[#cbcbcb] bg-white text-[14px] font-semibold text-[#818181] placeholder:text-[#cbcbcb] placeholder:font-medium focus:outline-none focus:ring-2 focus:ring-[#818181]/20 focus:border-[#818181] shadow-sm transition-all"
                             />
-                            <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-                                <div className="px-2 py-1 bg-[#dddddd] rounded-lg text-[10px] font-medium text-[#a6a6a6] tracking-wider">SKU</div>
-                            </div>
-                        </form>
+                        </div>
                         <div className="flex items-center gap-3">
                             <button
                                 type="button"
@@ -897,22 +870,20 @@ const POSTerminal = () => {
                     {/* Desktop: Search + Categories all sticky in the left sidebar */}
                     <aside className="hidden lg:block col-span-3 xl:col-span-2 min-w-0">
                         <div className="sticky top-[80px]">
-                            <form onSubmit={handleSkuScan} className="relative mb-5">
+                            <div className="relative mb-5">
                                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#cbcbcb]" size={16} />
                                 <input
                                     type="text"
                                     aria-label="Search products"
                                     placeholder="Search products..."
-                                    value={skuSearch || search}
+                                    value={search}
                                     onChange={(e) => {
-                                        const v = e.target.value;
-                                        setSkuSearch(v);
-                                        setSearch(v);
+                                        setSearch(e.target.value);
                                         setPage(1);
                                     }}
                                     className="w-full h-10 pl-10 pr-3 rounded-xl border border-[#cbcbcb] bg-white text-[13px] font-semibold text-[#818181] placeholder:text-[#cbcbcb] placeholder:font-medium focus:outline-none focus:ring-2 focus:ring-[#818181]/20 focus:border-[#818181] shadow-sm transition-all"
                                 />
-                            </form>
+                            </div>
                             <h2 className="text-[12px] font-semibold text-[#cbcbcb] uppercase tracking-widest mb-4 px-2">Categories</h2>
                             <div className="space-y-1 text-[14px] font-medium">
                                 <button
@@ -1103,9 +1074,6 @@ const POSTerminal = () => {
                                                 <div className="flex-1 flex flex-col">
                                                     <div className="text-[11px] font-medium text-[#cbcbcb] uppercase tracking-widest truncate mb-1">
                                                         {item.category?.name || 'Uncategorized'}
-                                                    </div>
-                                                    <div className="text-[10px] font-medium text-[#a6a6a6] truncate mb-1">
-                                                        SKU: {item.sku || 'N/A'}
                                                     </div>
                                                     <div className="text-[14px] font-medium text-[#818181] leading-tight mb-2 line-clamp-2">
                                                         {item.name}

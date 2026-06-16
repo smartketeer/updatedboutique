@@ -105,7 +105,7 @@ const CashierHistory = () => {
                         <input
                             value={q}
                             onChange={(e) => setQ(e.target.value)}
-                            placeholder="Search client, item, or SKU..."
+                            placeholder="Search client or item..."
                             className="w-full pl-10 pr-3 py-2 border border-[#19140035] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#2D4F3E]"
                         />
                     </div>

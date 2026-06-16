@@ -62,6 +62,9 @@ const Layout = () => {
         const n = Number(raw);
         return Number.isFinite(n) ? n : 0;
     });
+
+    const [cashierNotifications, setCashierNotifications] = React.useState([]);
+    const [isCashierNotifOpen, setIsCashierNotifOpen] = React.useState(false);
     const branchName = useAuthStore((state) => state.branchName);
     const branches = [lunaBranch, roxasBranch];
     const cashierBranding =
@@ -107,12 +110,40 @@ const Layout = () => {
         }
     }, [isAdmin]);
 
+    const fetchCashierNotifications = React.useCallback(async () => {
+        if (isAdmin || user?.role !== 'staff') return;
+        try {
+            const res = await axios.get('/api/requisitions/notifications');
+            if (res.data) setCashierNotifications(res.data);
+        } catch (err) {
+            console.error('Failed to load notifications', err);
+        }
+    }, [isAdmin, user?.role]);
+
+    const handleDismissCashierNotification = async (notificationId) => {
+        try {
+            await axios.post(`/api/requisitions/${notificationId}/mark-notified`);
+            setCashierNotifications(prev => prev.filter(n => n.id !== notificationId));
+            if (cashierNotifications.length <= 1) setIsCashierNotifOpen(false);
+        } catch (err) {
+            console.error('Failed to dismiss notification', err);
+        }
+    };
+
     React.useEffect(() => {
         if (!isAdmin) return;
         fetchInventoryNotifications();
         const id = window.setInterval(fetchInventoryNotifications, 5000);
         return () => window.clearInterval(id);
     }, [isAdmin, fetchInventoryNotifications]);
+
+    React.useEffect(() => {
+        if (!isAdmin && user?.role === 'staff') {
+            fetchCashierNotifications();
+            const id = window.setInterval(fetchCashierNotifications, 15000);
+            return () => window.clearInterval(id);
+        }
+    }, [isAdmin, user?.role, fetchCashierNotifications]);
 
     React.useEffect(() => {
         if (!isAdmin) return;
@@ -241,6 +272,55 @@ const Layout = () => {
                             <div className="hidden xl:block">
                                 <LiveClock />
                             </div>
+
+                            <div className="relative">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsCashierNotifOpen(!isCashierNotifOpen)}
+                                    className="relative p-2 rounded-full text-[#a6a6a6] hover:text-[#818181] hover:bg-[#dddddd] transition-colors"
+                                >
+                                    <Bell size={20} />
+                                    {cashierNotifications.length > 0 && (
+                                        <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
+                                    )}
+                                </button>
+                                
+                                {isCashierNotifOpen && cashierNotifications.length > 0 && (
+                                    <>
+                                        <div className="fixed inset-0 z-40" onClick={() => setIsCashierNotifOpen(false)} />
+                                        <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-[#cbcbcb] overflow-hidden z-50">
+                                            <div className="p-4 border-b border-[#cbcbcb] bg-[#f8f8f8] flex justify-between items-center">
+                                                <h3 className="font-bold text-[#818181]">Notifications</h3>
+                                                <span className="bg-red-50 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full">{cashierNotifications.length} new</span>
+                                            </div>
+                                            <div className="max-h-96 overflow-y-auto">
+                                                {cashierNotifications.map(notif => (
+                                                    <div key={notif.id} className="p-4 border-b border-zinc-50 hover:bg-[#f8f8f8] transition-colors">
+                                                        <p className="text-sm text-[#818181] mb-2 leading-relaxed">
+                                                            Your request for <span className="font-bold text-[#3a3a3a]">{notif.quantity}x {notif.item_name}</span> was <span className="text-red-500 font-bold">rejected</span>.
+                                                        </p>
+                                                        <button
+                                                            onClick={() => handleDismissCashierNotification(notif.id)}
+                                                            className="text-xs font-bold text-blue-500 hover:text-blue-600 transition-colors"
+                                                        >
+                                                            Mark as read
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+                                {isCashierNotifOpen && cashierNotifications.length === 0 && (
+                                    <>
+                                        <div className="fixed inset-0 z-40" onClick={() => setIsCashierNotifOpen(false)} />
+                                        <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-[#cbcbcb] overflow-hidden z-50 p-4 text-center">
+                                            <p className="text-sm text-[#a6a6a6]">No new notifications.</p>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+
                             <div className="relative">
                                 <button
                                     type="button"

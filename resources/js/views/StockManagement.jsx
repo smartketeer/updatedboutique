@@ -60,7 +60,6 @@ const StockManagement = () => {
     const [newItem, setNewItem] = useState({
         name: '',
         category_id: '',
-        sku: '',
         price: '',
         cost: '',
         stock: '',
@@ -99,48 +98,7 @@ const StockManagement = () => {
         return code;
     };
 
-    // Get unique random 4-digit number
-    const getNextSequenceNumber = (categoryCode) => {
-        const pattern = `${categoryCode}-`;
-        const existingNumbers = new Set();
-        
-        // Collect all existing sequence numbers for this category
-        items.forEach(item => {
-            if (item.sku && item.sku.startsWith(pattern)) {
-                const skuParts = item.sku.split('-');
-                const lastPart = skuParts[skuParts.length - 1];
-                if (/^\d{4}$/.test(lastPart)) {
-                    existingNumbers.add(parseInt(lastPart, 10));
-                }
-            }
-        });
-        
-        // Generate random number between 1 and 9999 that's not in existingNumbers
-        let randomNumber;
-        const maxAttempts = 1000;
-        for (let i = 0; i < maxAttempts; i++) {
-            randomNumber = Math.floor(Math.random() * 9999) + 1; // 1 to 9999
-            if (!existingNumbers.has(randomNumber)) {
-                break;
-            }
-        }
-        
-        return randomNumber;
-    };
-
-    // Auto-generate SKU when name or category changes
-    useEffect(() => {
-        if (newItem.name && newItem.category_id) {
-            const categoryCode = getCategoryCode(newItem.category_id);
-            const nameParts = extractNameParts(newItem.name);
-            const itemSlug = nameParts.join('-');
-            const sequenceNumber = getNextSequenceNumber(categoryCode);
-            const sku = `${categoryCode}-${itemSlug}-${String(sequenceNumber).padStart(4, '0')}`;
-            setNewItem(prev => ({ ...prev, sku }));
-        } else {
-            setNewItem(prev => ({ ...prev, sku: '' }));
-        }
-    }, [newItem.name, newItem.category_id, categories, items]);
+    // ── END AUTO GENERATION ──
     const [newCategory, setNewCategory] = useState({
         name: '',
         type: 'product',
@@ -224,8 +182,7 @@ const StockManagement = () => {
         if (!q) return items;
         return items.filter((it) => {
             const name = String(it?.name || '').toLowerCase();
-            const sku = String(it?.sku || '').toLowerCase();
-            return name.includes(q) || sku.includes(q);
+            return name.includes(q);
         });
     }, [items, itemSearch]);
 
@@ -288,15 +245,14 @@ const StockManagement = () => {
             const res = await axios.post('/api/stock-management/items', {
                 name: newItem.name,
                 category_id: Number(newItem.category_id),
-                sku: newItem.sku ? String(newItem.sku) : null,
-                price: Number(newItem.price || 0),
+                price: parseFloat(newItem.price || 0),
                 cost: Number(newItem.cost || 0),
                 stock: newItem.stock !== '' ? Number(newItem.stock) : null,
                 is_service: Boolean(newItem.is_service),
                 branch_id: Number(branchId),
             });
             setIsAddItemOpen(false);
-            setNewItem({ name: '', category_id: '', sku: '', price: '', cost: '', stock: '' });
+            setNewItem({ name: '', category_id: '', price: '', cost: '', stock: '' });
             await loadCatalog(branchId);
             if (res.data?.id != null) setSelectedItemId(String(res.data.id));
         } catch (err) {
@@ -321,8 +277,7 @@ const StockManagement = () => {
         if (!q) return items;
         return items.filter((it) => {
             const name = String(it?.name || '').toLowerCase();
-            const sku = String(it?.sku || '').toLowerCase();
-            return name.includes(q) || sku.includes(q);
+            return name.includes(q);
         });
     }, [items, adjustSearch]);
 
@@ -537,9 +492,9 @@ const StockManagement = () => {
                                     <input
                                         id="adjust-search"
                                         type="text"
-                                        value={adjustSearch}
-                                        onChange={(e) => setAdjustSearch(e.target.value)}
-                                        placeholder="Search by name or SKU…"
+                                        value={itemSearch}
+                                        onChange={(e) => setItemSearch(e.target.value)}
+                                        placeholder="Search by name…"
                                         className="w-full pl-9 pr-3 py-2 border border-[#cbcbcb] rounded-xl text-sm font-medium text-[#818181] bg-white"
                                     />
                                 </div>
@@ -607,7 +562,7 @@ const StockManagement = () => {
                                             <th className="pl-4 py-3 w-10"></th>
                                         )}
                                         <th className="px-4 py-3">Product Name</th>
-                                        <th className="px-4 py-3">SKU</th>
+                                        <th className="px-4 py-3">Category</th>
                                         <th className="px-4 py-3">Capital Price</th>
                                         <th className="px-4 py-3">Selling Price</th>
                                         {!deleteMode && <th className="px-4 py-3 text-right">Actions</th>}
@@ -653,7 +608,7 @@ const StockManagement = () => {
                                                             <span className={`text-sm font-semibold ${deleteMode && isChecked ? 'text-red-600 line-through' : 'text-[#818181]'}`}>{it.name}</span>
                                                         )}
                                                     </td>
-                                                    <td className="px-4 py-3 text-xs font-medium text-[#a6a6a6]">{it.sku || EM_DASH}</td>
+                                                    <td className="px-4 py-3 text-xs font-medium text-[#a6a6a6]">{it.category?.name || EM_DASH}</td>
                                                     <td className="px-4 py-3">
                                                         {isEditing ? (
                                                             <input type="number" value={editForm.cost} onChange={(e) => setEditForm({...editForm, cost: e.target.value})} className="w-24 px-2 py-1.5 border border-[#cbcbcb] rounded-lg text-sm font-medium" />
@@ -715,7 +670,7 @@ const StockManagement = () => {
                                     type="text"
                                     value={itemSearch}
                                     onChange={(e) => setItemSearch(e.target.value)}
-                                    placeholder={`Search by name or SKU${ELLIPSIS}`}
+                                    placeholder={`Search by name${ELLIPSIS}`}
                                     className="w-full px-3 py-2.5 border border-[#cbcbcb] rounded-xl text-sm font-medium text-[#818181] bg-white"
                                 />
                             </div>
@@ -734,7 +689,9 @@ const StockManagement = () => {
                                     <option value="">Select item</option>
                                     {filteredItems.slice(0, 500).map((it) => (
                                         <option key={it.id} value={String(it.id)}>
-                                            {it.name} {it.sku ? `(${it.sku})` : ''}
+                                            <div className="font-semibold text-sm text-[#818181]">
+                                                {it.name}
+                                            </div>
                                         </option>
                                     ))}
                                 </select>
@@ -913,9 +870,9 @@ const StockManagement = () => {
                                                     </td>
                                                     <td className="px-4 py-3">
                                                         <div className="text-sm font-semibold text-[#818181]">{m?.item?.name || EM_DASH}</div>
-                                                        <div className="text-[10px] font-medium text-[#a6a6a6] uppercase tracking-widest">
-                                                            {m?.reason || EM_DASH} {m?.item?.sku ? `${BULLET} ${m.item.sku}` : ''}
-                                                        </div>
+                                                        <p className="text-[11px] font-medium text-[#cbcbcb] mt-1">
+                                                            {m?.reason || EM_DASH}
+                                                        </p>
                                                     </td>
                                                     <td className="px-4 py-3">
                                                         <span className={`text-sm font-semibold px-2 py-1 rounded-lg border ${isNeg ? 'bg-[#dddddd] text-[#818181] border-[#cbcbcb]' : 'bg-[#dddddd] text-[#818181] border-[#cbcbcb]'}`}>
@@ -971,16 +928,6 @@ const StockManagement = () => {
                                                 value={newItem.name}
                                                 onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
                                                 className="w-full px-4 py-2 border border-[#19140035] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#818181]/10 text-sm font-medium"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-semibold text-[#a6a6a6] uppercase tracking-widest mb-1">SKU</label>
-                                            <input
-                                                type="text"
-                                                required
-                                                readOnly
-                                                value={newItem.sku}
-                                                className="w-full px-4 py-2 border border-[#19140035] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#818181]/10 text-sm font-medium bg-gray-50"
                                             />
                                         </div>
                                         <div>

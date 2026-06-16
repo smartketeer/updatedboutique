@@ -39,7 +39,6 @@ const AdminVoidHistory = () => {
                 const query = transfersQ.toLowerCase().trim();
                 data = data.filter(log => 
                     (log.item?.name || '').toLowerCase().includes(query) ||
-                    (log.item?.sku || '').toLowerCase().includes(query) ||
                     (log.actor?.name || '').toLowerCase().includes(query)
                 );
             }
@@ -175,7 +174,7 @@ const AdminVoidHistory = () => {
                         <input
                             value={q}
                             onChange={(e) => setQ(e.target.value)}
-                            placeholder="Search cashier name, item, or SKU..."
+                            placeholder="Search cashier name or item..."
                             className="w-full pl-10 pr-3 py-2 border border-[#19140035] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#2D4F3E]"
                         />
                     </div>
@@ -311,7 +310,7 @@ const AdminVoidHistory = () => {
                             <input
                                 value={transfersQ}
                                 onChange={(e) => setTransfersQ(e.target.value)}
-                                placeholder="Search cashier name, item, or SKU..."
+                                placeholder="Search cashier name or item..."
                                 className="w-full pl-10 pr-3 py-2 border border-[#19140035] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#2D4F3E]"
                             />
                         </div>

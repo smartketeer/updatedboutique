@@ -33,6 +33,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/inventory', [InventoryController::class, 'index']);
     Route::get('/inventory/low-stock', [InventoryController::class, 'lowStock']);
     Route::get('/inventory/lookup', [InventoryController::class, 'lookup']);
+    Route::post('/inventory/check-duplicate', [InventoryController::class, 'checkDuplicate']);
     Route::get('/inventory/by-ids', [InventoryController::class, 'byIds']);
     Route::get('/inventory/{item}', [InventoryController::class, 'show']);
     Route::get('/categories', [InventoryController::class, 'categories']);

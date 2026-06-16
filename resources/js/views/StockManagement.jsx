@@ -1,7 +1,7 @@
 import React, { Fragment, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { Dialog, Transition, Menu } from '@headlessui/react';
-import { ArrowDownCircle, ArrowUpCircle, Edit3, ShoppingBag, Plus, X, Package, Search, Save, Pencil, Trash2, AlertTriangle } from 'lucide-react';
+import { ArrowDownCircle, ArrowUpCircle, Edit3, ShoppingBag, Plus, X, Package, Search, Save, Pencil, Trash2, AlertTriangle, ShieldCheck } from 'lucide-react';
 
 const PESO = '\u20B1';
 const EM_DASH = '\u2014';
@@ -56,6 +56,9 @@ const StockManagement = () => {
         }),
         [categories],
     );
+
+    const [isDuplicateModalOpen, setIsDuplicateModalOpen] = useState(false);
+    const [duplicateItems, setDuplicateItems] = useState([]);
 
     const [newItem, setNewItem] = useState({
         name: '',
@@ -235,12 +238,26 @@ const StockManagement = () => {
         }
     };
 
-    const createItem = async (e) => {
-        e.preventDefault();
+    const createItem = async (e, forceCreate = false) => {
+        if (e) e.preventDefault();
         if (!branchId) {
             alert('Please select a branch first.');
             return;
         }
+
+        if (!forceCreate) {
+            try {
+                const res = await axios.post('/api/inventory/check-duplicate', { name: newItem.name });
+                if (res.data.has_duplicates) {
+                    setDuplicateItems(res.data.duplicates);
+                    setIsDuplicateModalOpen(true);
+                    return;
+                }
+            } catch (err) {
+                // Proceed if check fails
+            }
+        }
+
         try {
             const res = await axios.post('/api/stock-management/items', {
                 name: newItem.name,
@@ -250,15 +267,18 @@ const StockManagement = () => {
                 stock: newItem.stock !== '' ? Number(newItem.stock) : null,
                 is_service: Boolean(newItem.is_service),
                 branch_id: Number(branchId),
+                force_create: forceCreate,
             });
             setIsAddItemOpen(false);
-            setNewItem({ name: '', category_id: '', price: '', cost: '', stock: '' });
+            setIsDuplicateModalOpen(false);
+            setNewItem({ name: '', category_id: '', price: '', cost: '', stock: '', is_service: false });
             await loadCatalog(branchId);
             if (res.data?.id != null) setSelectedItemId(String(res.data.id));
         } catch (err) {
             alert(err.response?.data?.message || 'Failed to add item.');
         }
     };
+
 
     const createCategory = async (e) => {
         e.preventDefault();
@@ -986,6 +1006,60 @@ const StockManagement = () => {
                                             </button>
                                         </div>
                                     </form>
+                                </Dialog.Panel>
+                            </Transition.Child>
+                        </div>
+                    </div>
+                </Dialog>
+            </Transition>
+
+            {/* ── Duplicate Item Modal ── */}
+            <Transition appear show={isDuplicateModalOpen} as={Fragment}>
+                <Dialog as="div" className="relative z-[60]" onClose={() => setIsDuplicateModalOpen(false)}>
+                    <Transition.Child as={Fragment} enter="ease-out duration-200" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-150" leaveFrom="opacity-100" leaveTo="opacity-0">
+                        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
+                    </Transition.Child>
+                    <div className="fixed inset-0 overflow-y-auto">
+                        <div className="flex min-h-full items-center justify-center p-4">
+                            <Transition.Child as={Fragment} enter="ease-out duration-200" enterFrom="opacity-0 scale-95" enterTo="opacity-100 scale-100" leave="ease-in duration-150" leaveFrom="opacity-100 scale-100" leaveTo="opacity-0 scale-95">
+                                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white text-left align-middle shadow-xl transition-all border border-[#cbcbcb]">
+                                    <div className="px-6 py-4 border-b border-[#cbcbcb] flex items-center justify-between">
+                                        <Dialog.Title className="text-lg font-medium text-orange-600 flex items-center gap-2">
+                                            <ShieldCheck className="w-5 h-5" /> Similar Items Found
+                                        </Dialog.Title>
+                                        <button type="button" onClick={() => setIsDuplicateModalOpen(false)} className="text-[#a6a6a6] hover:text-[#818181] transition-colors"><X size={20} /></button>
+                                    </div>
+                                    <div className="px-6 py-4">
+                                        <p className="text-sm text-[#818181] mb-4">
+                                            We found similar items already existing in the inventory. Are you sure you want to add a new item?
+                                        </p>
+                                        <div className="max-h-40 overflow-y-auto border border-[#cbcbcb] rounded-xl mb-4 bg-gray-50">
+                                            {duplicateItems.map((dup, i) => (
+                                                <div key={i} className={`p-3 flex justify-between items-center ${i !== duplicateItems.length - 1 ? 'border-b border-[#cbcbcb]' : ''}`}>
+                                                    <div>
+                                                        <div className="font-semibold text-sm text-[#818181]">{dup.name}</div>
+                                                        <div className="text-xs text-[#a6a6a6]">SKU: {dup.sku || 'N/A'} • Price: {PESO}{Number(dup.price).toFixed(2)}</div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="flex gap-2 pt-2">
+                                            <button
+                                                type="button"
+                                                onClick={(e) => createItem(e, true)}
+                                                className="flex-1 min-h-[48px] py-3 border border-orange-500 text-orange-600 rounded-xl font-semibold text-sm hover:bg-orange-50 active:bg-orange-100 transition-colors cursor-pointer"
+                                            >
+                                                Proceed to new item
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsDuplicateModalOpen(false)}
+                                                className="flex-1 min-h-[48px] py-3 bg-[#818181] text-white rounded-xl font-semibold text-sm hover:bg-[#a6a6a6] active:bg-[#555] shadow-sm transition-colors cursor-pointer"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
                                 </Dialog.Panel>
                             </Transition.Child>
                         </div>

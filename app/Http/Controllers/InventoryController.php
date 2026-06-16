@@ -207,4 +207,33 @@ class InventoryController extends Controller
 
         return response()->json($items);
     }
+
+    public function checkDuplicate(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string',
+        ]);
+
+        $name = trim(strtolower($validated['name']));
+        $words = explode(' ', $name);
+        
+        $query = Item::query();
+        
+        // Simple similarity check: match any word over 3 chars or the whole phrase
+        $query->where(function ($q) use ($name, $words) {
+            $q->whereRaw('LOWER(name) LIKE ?', ['%' . $name . '%']);
+            foreach ($words as $word) {
+                if (strlen($word) > 3) {
+                    $q->orWhereRaw('LOWER(name) LIKE ?', ['%' . $word . '%']);
+                }
+            }
+        });
+
+        $duplicates = $query->limit(5)->get();
+
+        return response()->json([
+            'has_duplicates' => $duplicates->isNotEmpty(),
+            'duplicates' => $duplicates
+        ]);
+    }
 }

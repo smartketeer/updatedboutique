@@ -66,6 +66,10 @@ const CashierInventoryManagement = () => {
     const [pullOutForm, setPullOutForm] = React.useState({ quantity: '', reason: '' });
     const [transferPullOutError, setTransferPullOutError] = React.useState('');
 
+    // ── Duplicate Detection state ──
+    const [isDuplicateModalOpen, setIsDuplicateModalOpen] = React.useState(false);
+    const [duplicateItems, setDuplicateItems] = React.useState([]);
+
     // ── Request Item state ──
     const [isRequestModalOpen, setIsRequestModalOpen] = React.useState(false);
     const [requestForm, setRequestForm] = React.useState({ sku: '', item_name: '', quantity: '', reason: '' });
@@ -324,8 +328,8 @@ const CashierInventoryManagement = () => {
         setIsItemModalOpen(true);
     };
 
-    const handleSaveItem = async (e) => {
-        e.preventDefault();
+    const handleSaveItem = async (e, forceCreate = false) => {
+        if (e) e.preventDefault();
         setError('');
 
         // Frontend validation: adjustment_reason required when editing any detail
@@ -334,6 +338,20 @@ const CashierInventoryManagement = () => {
             if (!reason) {
                 setError('An adjustment reason is required when modifying product details.');
                 return;
+            }
+        }
+
+        // Duplicate check for new items
+        if (!editingItem && !forceCreate) {
+            try {
+                const res = await axios.post('/api/inventory/check-duplicate', { name: itemForm.name });
+                if (res.data.has_duplicates) {
+                    setDuplicateItems(res.data.duplicates);
+                    setIsDuplicateModalOpen(true);
+                    return;
+                }
+            } catch (err) {
+                // Proceed if duplicate check fails
             }
         }
 
@@ -346,6 +364,7 @@ const CashierInventoryManagement = () => {
                 cost: Number(itemForm.cost || 0),
                 stock_qty: Number(itemForm.stock_qty || 0),
                 is_service: Boolean(itemForm.is_service),
+                force_create: forceCreate,
             };
             if (editingItem) {
                 await axios.put(
@@ -357,6 +376,7 @@ const CashierInventoryManagement = () => {
                 await axios.post('/api/cashier/inventory', payload, { headers: { 'X-Inventory-Access-Token': accessToken } });
             }
             setIsItemModalOpen(false);
+            setIsDuplicateModalOpen(false);
             setEditingItem(null);
             await fetchData();
         } catch (err) {
@@ -1164,6 +1184,70 @@ const CashierInventoryManagement = () => {
                                             </button>
                                         </div>
                                     </form>
+                                </Dialog.Panel>
+                            </Transition.Child>
+                        </div>
+                    </div>
+                </Dialog>
+            </Transition>
+
+            {/* ── Duplicate Item Modal ── */}
+            <Transition appear show={isDuplicateModalOpen} as={React.Fragment}>
+                <Dialog as="div" className="relative z-[60]" onClose={() => setIsDuplicateModalOpen(false)}>
+                    <Transition.Child as={React.Fragment} enter="ease-out duration-200" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-150" leaveFrom="opacity-100" leaveTo="opacity-0">
+                        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" />
+                    </Transition.Child>
+                    <div className="fixed inset-0 overflow-y-auto">
+                        <div className="flex min-h-full items-center justify-center p-4">
+                            <Transition.Child as={React.Fragment} enter="ease-out duration-200" enterFrom="opacity-0 scale-95" enterTo="opacity-100 scale-100" leave="ease-in duration-150" leaveFrom="opacity-100 scale-100" leaveTo="opacity-0 scale-95">
+                                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white text-left align-middle shadow-xl transition-all border border-[#cbcbcb]">
+                                    <div className="px-6 py-4 border-b border-[#cbcbcb] flex items-center justify-between">
+                                        <Dialog.Title className="text-lg font-medium text-orange-600 flex items-center gap-2">
+                                            <ShieldCheck className="w-5 h-5" /> Similar Items Found
+                                        </Dialog.Title>
+                                        <button type="button" onClick={() => setIsDuplicateModalOpen(false)} className="text-[#a6a6a6] hover:text-[#818181] transition-colors"><X size={20} /></button>
+                                    </div>
+                                    <div className="px-6 py-4">
+                                        <p className="text-sm text-[#818181] mb-4">
+                                            We found similar items already existing in the inventory. Are you sure you want to add a new item?
+                                        </p>
+                                        <div className="max-h-40 overflow-y-auto border border-[#cbcbcb] rounded-xl mb-4 bg-gray-50">
+                                            {duplicateItems.map((dup, i) => (
+                                                <div key={i} className={`p-3 flex justify-between items-center ${i !== duplicateItems.length - 1 ? 'border-b border-[#cbcbcb]' : ''}`}>
+                                                    <div>
+                                                        <div className="font-semibold text-sm text-[#818181]">{dup.name}</div>
+                                                        <div className="text-xs text-[#a6a6a6]">SKU: {dup.sku || 'N/A'} • Price: {PESO}{Number(dup.price).toFixed(2)}</div>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setIsDuplicateModalOpen(false);
+                                                            openEditItem(dup);
+                                                        }}
+                                                        className="px-3 py-1.5 bg-white border border-[#cbcbcb] rounded-lg text-xs font-semibold text-[#818181] hover:bg-gray-50 transition-colors"
+                                                    >
+                                                        Select
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="flex gap-2 pt-2">
+                                            <button
+                                                type="button"
+                                                onClick={(e) => handleSaveItem(e, true)}
+                                                className="flex-1 min-h-[48px] py-3 border border-orange-500 text-orange-600 rounded-xl font-semibold text-sm hover:bg-orange-50 active:bg-orange-100 transition-colors cursor-pointer"
+                                            >
+                                                Proceed to new item
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsDuplicateModalOpen(false)}
+                                                className="flex-1 min-h-[48px] py-3 bg-[#818181] text-white rounded-xl font-semibold text-sm hover:bg-[#a6a6a6] active:bg-[#555] shadow-sm transition-colors cursor-pointer"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    </div>
                                 </Dialog.Panel>
                             </Transition.Child>
                         </div>

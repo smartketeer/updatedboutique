@@ -53,22 +53,14 @@ class CashierInventoryController extends Controller
             'name' => [
                 'required',
                 'string',
-                function ($attribute, $value, $fail) {
+                function ($attribute, $value, $fail) use ($request) {
+                    if ($request->boolean('force_create')) {
+                        return;
+                    }
                     $existsInLocal = \App\Models\Item::whereRaw('LOWER(name) = ?', [strtolower($value)])->exists();
                     if ($existsInLocal) {
                         $fail('This item name already exists in the POS system.');
                         return;
-                    }
-                    try {
-                        $existsInBodega = \Illuminate\Support\Facades\DB::connection('bodega')
-                            ->table('items')
-                            ->whereRaw('LOWER(name) = ?', [strtolower($value)])
-                            ->exists();
-                        if ($existsInBodega) {
-                            $fail('This item name already exists in the Bodega system.');
-                        }
-                    } catch (\Exception $e) {
-                        // ignore connection failure
                     }
                 }
             ],
@@ -177,6 +169,33 @@ class CashierInventoryController extends Controller
                 'stock_qty' => $normalizedStock,
                 'is_service' => $isService,
             ]);
+
+            // Reverse Sync to Bodega
+            try {
+                $bdgCategoryId = null;
+                $posCategory = Category::find($item->category_id);
+                if ($posCategory) {
+                    $bdgCategory = DB::table('bodega_categories')->where('bdg_name', $posCategory->name)->first();
+                    if ($bdgCategory) {
+                        $bdgCategoryId = $bdgCategory->bdg_id;
+                    }
+                }
+                
+                DB::table('bodega_items')->insert([
+                    'bdg_category_id' => $bdgCategoryId,
+                    'bdg_name' => $item->name,
+                    'bdg_sku' => $item->sku,
+                    'bdg_price' => $item->price,
+                    'bdg_cost' => $item->cost,
+                    'bdg_stock_qty' => 0,
+                    'bdg_is_service' => $item->is_service,
+                    'bdg_primary_image_id' => null,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            } catch (\Exception $e) {
+                // Silently handle if Bodega reverse sync fails or is unavailable
+            }
 
             BranchItemStock::query()->create([
                 'branch_id' => $branchId,

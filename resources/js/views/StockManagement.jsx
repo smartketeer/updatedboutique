@@ -926,7 +926,7 @@ const StockManagement = () => {
                                                 type="text"
                                                 required
                                                 value={newItem.name}
-                                                onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
+                                                onChange={(e) => setNewItem({ ...newItem, name: e.target.value.replace(/\b[a-z]/g, char => char.toUpperCase()) })}
                                                 className="w-full px-4 py-2 border border-[#19140035] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#818181]/10 text-sm font-medium"
                                             />
                                         </div>
@@ -1017,7 +1017,7 @@ const StockManagement = () => {
                                                 type="text"
                                                 required
                                                 value={newCategory.name}
-                                                onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+                                                onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value.replace(/\b[a-z]/g, char => char.toUpperCase()) })}
                                                 className="w-full px-4 py-2 border border-[#19140035] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#818181]/10 text-sm font-medium"
                                             />
                                         </div>

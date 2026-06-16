@@ -393,7 +393,7 @@ const CashierAccounts = () => {
                             <label className="block text-xs font-semibold text-[#a6a6a6] mb-1">Name</label>
                             <input
                                 value={form.name}
-                                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value.replace(/\b[a-z]/g, char => char.toUpperCase()) }))}
                                 className="w-full px-3 py-2 border border-[#19140035] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#d94a79]/25 bg-white"
                                 required
                             />

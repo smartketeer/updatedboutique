@@ -391,11 +391,9 @@ const CashierInventoryManagement = () => {
             }
             if (err.response?.status === 422 && err.response?.data?.errors?.adjustment_reason) {
                 setError(err.response.data.errors.adjustment_reason[0]);
-                alert(err.response.data.errors.adjustment_reason[0]);
                 return;
             }
             setError(msg);
-            alert(msg);
         }
     };
 
@@ -1089,6 +1087,12 @@ const CashierInventoryManagement = () => {
                                             <X size={18} />
                                         </button>
                                     </div>
+
+                                    {error && (
+                                        <div className="mb-4 p-3 bg-[#dddddd] text-[#818181] border border-red-100 rounded-lg text-sm">
+                                            {error}
+                                        </div>
+                                    )}
 
                                     <form onSubmit={handleSaveItem} className="space-y-3">
                                         <div>

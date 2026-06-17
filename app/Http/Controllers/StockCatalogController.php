@@ -153,11 +153,14 @@ class StockCatalogController extends Controller
                 'required',
                 'string',
                 function ($attribute, $value, $fail) use ($item) {
-                    $existsInLocal = \App\Models\Item::whereRaw('LOWER(name) = ?', [strtolower(trim($value))])
-                                     ->where('id', '!=', $item->id)
-                                     ->exists();
-                    if ($existsInLocal) {
-                        $fail('This item name already exists in the POS system.');
+                    // Only validate if the name is being changed
+                    if (strtolower(trim($value)) !== strtolower(trim($item->name))) {
+                        $existsInLocal = \App\Models\Item::whereRaw('LOWER(name) = ?', [strtolower(trim($value))])
+                                         ->where('id', '!=', $item->id)
+                                         ->exists();
+                        if ($existsInLocal) {
+                            $fail('This item name already exists in the POS system.');
+                        }
                     }
                 }
             ],

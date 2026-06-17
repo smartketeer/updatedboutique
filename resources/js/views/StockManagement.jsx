@@ -258,6 +258,10 @@ const StockManagement = () => {
             }
         }
 
+        if (forceCreate) {
+            setIsDuplicateModalOpen(false);
+        }
+
         try {
             const res = await axios.post('/api/stock-management/items', {
                 name: newItem.name,
@@ -270,7 +274,6 @@ const StockManagement = () => {
                 force_create: forceCreate,
             });
             setIsAddItemOpen(false);
-            setIsDuplicateModalOpen(false);
             setNewItem({ name: '', category_id: '', price: '', cost: '', stock: '', is_service: false });
             await loadCatalog(branchId);
             if (res.data?.id != null) setSelectedItemId(String(res.data.id));

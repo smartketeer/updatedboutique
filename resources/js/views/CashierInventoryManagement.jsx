@@ -355,6 +355,10 @@ const CashierInventoryManagement = () => {
             }
         }
 
+        if (forceCreate) {
+            setIsDuplicateModalOpen(false);
+        }
+
         try {
             const payload = {
                 category_id: Number(itemForm.category_id),
@@ -376,7 +380,6 @@ const CashierInventoryManagement = () => {
                 await axios.post('/api/cashier/inventory', payload, { headers: { 'X-Inventory-Access-Token': accessToken } });
             }
             setIsItemModalOpen(false);
-            setIsDuplicateModalOpen(false);
             setEditingItem(null);
             await fetchData();
         } catch (err) {

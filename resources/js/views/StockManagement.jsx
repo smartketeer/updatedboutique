@@ -275,7 +275,8 @@ const StockManagement = () => {
             await loadCatalog(branchId);
             if (res.data?.id != null) setSelectedItemId(String(res.data.id));
         } catch (err) {
-            alert(err.response?.data?.message || 'Failed to add item.');
+            const msg = err.response?.data?.errors?.name?.[0] || err.response?.data?.message || 'Failed to add item.';
+            alert(msg);
         }
     };
 
@@ -323,7 +324,8 @@ const StockManagement = () => {
             cancelEdit();
             await loadCatalog(branchId);
         } catch (err) {
-            alert(err.response?.data?.message || 'Failed to save changes.');
+            const msg = err.response?.data?.errors?.name?.[0] || err.response?.data?.message || 'Failed to save changes.';
+            alert(msg);
         } finally {
             setAdjustSaving(false);
         }

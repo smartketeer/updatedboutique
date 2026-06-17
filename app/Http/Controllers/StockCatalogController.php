@@ -18,14 +18,10 @@ class StockCatalogController extends Controller
             'name' => [
                 'required',
                 'string',
-                function ($attribute, $value, $fail) use ($request) {
-                    if ($request->boolean('force_create')) {
-                        return;
-                    }
-                    $existsInLocal = \App\Models\Item::whereRaw('LOWER(name) = ?', [strtolower($value)])->exists();
+                function ($attribute, $value, $fail) {
+                    $existsInLocal = \App\Models\Item::whereRaw('LOWER(name) = ?', [strtolower(trim($value))])->exists();
                     if ($existsInLocal) {
                         $fail('This item name already exists in the POS system.');
-                        return;
                     }
                 }
             ],
@@ -152,7 +148,19 @@ class StockCatalogController extends Controller
     {
         $validated = $request->validate([
             'category_id' => 'sometimes|required|exists:categories,id',
-            'name' => 'sometimes|required|string',
+            'name' => [
+                'sometimes',
+                'required',
+                'string',
+                function ($attribute, $value, $fail) use ($item) {
+                    $existsInLocal = \App\Models\Item::whereRaw('LOWER(name) = ?', [strtolower(trim($value))])
+                                     ->where('id', '!=', $item->id)
+                                     ->exists();
+                    if ($existsInLocal) {
+                        $fail('This item name already exists in the POS system.');
+                    }
+                }
+            ],
             'sku' => 'sometimes|nullable|string|unique:items,sku,'.$item->id,
             'price' => 'sometimes|required|numeric|min:0',
             'cost' => 'sometimes|required|numeric|min:0',

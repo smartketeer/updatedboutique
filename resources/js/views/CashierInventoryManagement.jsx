@@ -380,8 +380,9 @@ const CashierInventoryManagement = () => {
             setEditingItem(null);
             await fetchData();
         } catch (err) {
-            const msg = err.response?.data?.message
+            const msg = err.response?.data?.errors?.name?.[0]
                 || err.response?.data?.errors?.adjustment_reason?.[0]
+                || err.response?.data?.message
                 || 'Save failed';
             if (err.response?.status === 403) {
                 await clearAccess();

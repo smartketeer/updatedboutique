@@ -1222,7 +1222,7 @@ const CashierInventoryManagement = () => {
                                                 <div key={i} className={`p-3 flex justify-between items-center ${i !== duplicateItems.length - 1 ? 'border-b border-[#cbcbcb]' : ''}`}>
                                                     <div>
                                                         <div className="font-semibold text-sm text-[#818181]">{dup.name}</div>
-                                                        <div className="text-xs text-[#a6a6a6]">SKU: {dup.sku || 'N/A'} • Price: {PESO}{Number(dup.price).toFixed(2)}</div>
+                                                        <div className="text-xs text-[#a6a6a6]">Price: {PESO}{Number(dup.price).toFixed(2)}</div>
                                                     </div>
                                                     <button
                                                         type="button"

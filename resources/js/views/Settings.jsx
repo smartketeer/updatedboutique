@@ -171,6 +171,8 @@ const Settings = () => {
             {/* Master Inventory Link */}
             <a
                 href="https://bodega.boutique-pos.com"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="mt-6 block bg-white border border-[#cbcbcb] rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden group"
             >
                 <div className="px-5 py-4 sm:px-6 sm:py-5 flex items-center justify-between gap-4">

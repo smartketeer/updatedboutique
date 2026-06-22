@@ -31,7 +31,6 @@ class AuthController extends Controller
         if (! $user || ! Hash::check($request->password, $user->password)) {
             \Log::warning('Login attempt failed for user: '.$request->email, [
                 'ip'          => $request->ip(),
-                'user_exists' => (bool) $user,
             ]);
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],

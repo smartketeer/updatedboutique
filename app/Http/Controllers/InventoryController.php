@@ -59,10 +59,11 @@ class InventoryController extends Controller
 
     private function itemForBranchQuery(int $branchId)
     {
+        $isAdmin = auth()->user()?->role === 'admin';
         $select = [
             'items.*',
             'branch_item_stocks.quantity as stock_qty',
-            Schema::hasColumn('branch_item_stocks', 'cost') ? 'branch_item_stocks.cost as branch_cost' : DB::raw('NULL as branch_cost'),
+            ($isAdmin && Schema::hasColumn('branch_item_stocks', 'cost')) ? 'branch_item_stocks.cost as branch_cost' : DB::raw('NULL as branch_cost'),
             Schema::hasColumn('branch_item_stocks', 'location') ? 'branch_item_stocks.location' : DB::raw('NULL as location'),
             Schema::hasColumn('branch_item_stocks', 'last_restock_date') ? 'branch_item_stocks.last_restock_date' : DB::raw('NULL as last_restock_date'),
             Schema::hasColumn('branch_item_stocks', 'total_sold') ? 'branch_item_stocks.total_sold' : DB::raw('0 as total_sold'),
@@ -215,7 +216,7 @@ class InventoryController extends Controller
         ]);
 
         $name = trim(strtolower($validated['name']));
-        $words = explode(' ', $name);
+        $words = array_slice(explode(' ', $name), 0, 5);
         
         $query = Item::query();
         

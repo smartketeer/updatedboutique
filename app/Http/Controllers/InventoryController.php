@@ -222,10 +222,12 @@ class InventoryController extends Controller
         
         // Simple similarity check: match any word over 3 chars or the whole phrase
         $query->where(function ($q) use ($name, $words) {
-            $q->whereRaw('LOWER(name) LIKE ?', ['%' . $name . '%']);
+            $escapedName = str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $name);
+            $q->whereRaw('LOWER(name) LIKE ?', ['%' . $escapedName . '%']);
             foreach ($words as $word) {
                 if (strlen($word) > 3) {
-                    $q->orWhereRaw('LOWER(name) LIKE ?', ['%' . $word . '%']);
+                    $escapedWord = str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $word);
+                    $q->orWhereRaw('LOWER(name) LIKE ?', ['%' . $escapedWord . '%']);
                 }
             }
         });

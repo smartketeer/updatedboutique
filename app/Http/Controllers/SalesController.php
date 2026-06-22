@@ -452,17 +452,19 @@ class SalesController extends Controller
         }
 
         if ($q = request()->query('q')) {
-            $query->where(function ($inner) use ($q, $hasCustomerType) {
+            $escapedQ = str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $q);
+            $likeQ = '%' . $escapedQ . '%';
+            $query->where(function ($inner) use ($likeQ, $hasCustomerType) {
                 $inner
-                    ->whereHas('client', function ($clientQ) use ($q) {
-                        $clientQ->where('name', 'like', "%{$q}%");
+                    ->whereHas('client', function ($clientQ) use ($likeQ) {
+                        $clientQ->where('name', 'like', $likeQ);
                     })
-                    ->orWhereHas('saleItems.item', function ($itemQ) use ($q) {
-                        $itemQ->where('name', 'like', "%{$q}%")
-                            ->orWhere('sku', 'like', "%{$q}%");
+                    ->orWhereHas('saleItems.item', function ($itemQ) use ($likeQ) {
+                        $itemQ->where('name', 'like', $likeQ)
+                            ->orWhere('sku', 'like', $likeQ);
                     });
                 if ($hasCustomerType) {
-                    $inner->orWhere('customer_type', 'like', "%{$q}%");
+                    $inner->orWhere('customer_type', 'like', $likeQ);
                 }
             });
         }

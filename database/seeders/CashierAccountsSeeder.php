@@ -11,39 +11,37 @@ class CashierAccountsSeeder extends Seeder
 {
     /**
      * Cashier definitions.
-     * Passwords are unique per person and follow the pattern <firstname><4-digit-pin>.
-     * PINs are randomly chosen but fixed so the seeder is idempotent.
      */
     private array $cashiers = [
         [
             'name'     => 'Merlina',
             'email'    => 'merlina@boutique.com',
-            'password' => 'Merlina@2024',
-            'pin'      => '3847',
+            'password' => env('CASHIER_MERLINA_PASSWORD', 'password'),
+            'pin'      => env('CASHIER_MERLINA_PIN', '0000'),
         ],
         [
             'name'     => 'Marites',
             'email'    => 'marites@boutique.com',
-            'password' => 'Marites@5912',
-            'pin'      => '5912',
+            'password' => env('CASHIER_MARITES_PASSWORD', 'password'),
+            'pin'      => env('CASHIER_MARITES_PIN', '0000'),
         ],
         [
             'name'     => 'Faith',
             'email'    => 'faith@boutique.com',
-            'password' => 'Faith@7263',
-            'pin'      => '7263',
+            'password' => env('CASHIER_FAITH_PASSWORD', 'password'),
+            'pin'      => env('CASHIER_FAITH_PIN', '0000'),
         ],
         [
             'name'     => 'Airen',
             'email'    => 'airen@boutique.com',
-            'password' => 'Airen@1048',
-            'pin'      => '1048',
+            'password' => env('CASHIER_AIREN_PASSWORD', 'password'),
+            'pin'      => env('CASHIER_AIREN_PIN', '0000'),
         ],
         [
             'name'     => 'Yssa',
             'email'    => 'yssa@boutique.com',
-            'password' => 'Yssa@6391',
-            'pin'      => '6391',
+            'password' => env('CASHIER_YSSA_PASSWORD', 'password'),
+            'pin'      => env('CASHIER_YSSA_PIN', '0000'),
         ],
     ];
 

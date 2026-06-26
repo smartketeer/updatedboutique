@@ -37,8 +37,8 @@ class DatabaseSeeder extends Seeder
             'email' => 'admin@boutique.com',
         ], [
             'name'         => 'Admin User',
-            'password'     => Hash::make('admin123'),
-            'pin_hash'     => Hash::make('1234'),
+            'password'     => Hash::make(env('ADMIN_PASSWORD', 'password')),
+            'pin_hash'     => Hash::make(env('ADMIN_PIN', '0000')),
             'pin_updated_at' => now(),
             'role'         => 'admin',
         ]);
@@ -48,8 +48,8 @@ class DatabaseSeeder extends Seeder
             'email' => 'luna@boutique.com',
         ], [
             'name'         => 'Luna Cashier',
-            'password'     => Hash::make('luna123'),
-            'pin_hash'     => Hash::make('1111'),
+            'password'     => Hash::make(env('LUNA_PASSWORD', 'password')),
+            'pin_hash'     => Hash::make(env('LUNA_PIN', '0000')),
             'pin_updated_at' => now(),
             'role'         => 'staff',
         ]);
@@ -59,8 +59,8 @@ class DatabaseSeeder extends Seeder
             'email' => 'roxas@boutique.com',
         ], [
             'name'         => 'Roxas Cashier',
-            'password'     => Hash::make('roxas123'),
-            'pin_hash'     => Hash::make('2222'),
+            'password'     => Hash::make(env('ROXAS_PASSWORD', 'password')),
+            'pin_hash'     => Hash::make(env('ROXAS_PIN', '0000')),
             'pin_updated_at' => now(),
             'role'         => 'staff',
         ]);
@@ -137,21 +137,21 @@ class DatabaseSeeder extends Seeder
                 'to' => 'admin@botique.com',
                 'name' => 'Admin User',
                 'role' => 'admin',
-                'password' => 'admin123',
+                'password' => env('ADMIN_PASSWORD', 'password'),
             ],
             [
                 'from' => 'cashier1@boutique.com',
                 'to' => 'luna@botique.com',
                 'name' => 'Luna Cashier',
                 'role' => 'staff',
-                'password' => 'luna123',
+                'password' => env('LUNA_PASSWORD', 'password'),
             ],
             [
                 'from' => 'cashier@boutique.com',
                 'to' => 'luna@botique.com',
                 'name' => 'Luna Cashier',
                 'role' => 'staff',
-                'password' => 'luna123',
+                'password' => env('LUNA_PASSWORD', 'password'),
             ],
         ];
 

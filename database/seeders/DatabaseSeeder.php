@@ -16,6 +16,9 @@ class DatabaseSeeder extends Seeder
 {
     /**
      * Seed the application's database.
+     *
+     * All account credentials (emails, passwords, PINs) are sourced
+     * from environment variables to keep them out of version control.
      */
     public function run(): void
     {
@@ -34,33 +37,33 @@ class DatabaseSeeder extends Seeder
 
         // Admin Account
         User::query()->updateOrCreate([
-            'email' => 'admin@boutique.com',
+            'email' => $this->requireEnv('ADMIN_EMAIL'),
         ], [
-            'name'         => 'Admin User',
-            'password'     => Hash::make(env('ADMIN_PASSWORD', 'password')),
-            'pin_hash'     => Hash::make(env('ADMIN_PIN', '0000')),
+            'name'         => $this->requireEnv('ADMIN_NAME'),
+            'password'     => Hash::make($this->requireEnv('ADMIN_PASSWORD')),
+            'pin_hash'     => Hash::make($this->requireEnv('ADMIN_PIN')),
             'pin_updated_at' => now(),
             'role'         => 'admin',
         ]);
 
         // Luna Branch Cashier
         User::query()->updateOrCreate([
-            'email' => 'luna@boutique.com',
+            'email' => $this->requireEnv('LUNA_EMAIL'),
         ], [
-            'name'         => 'Luna Cashier',
-            'password'     => Hash::make(env('LUNA_PASSWORD', 'password')),
-            'pin_hash'     => Hash::make(env('LUNA_PIN', '0000')),
+            'name'         => $this->requireEnv('LUNA_NAME'),
+            'password'     => Hash::make($this->requireEnv('LUNA_PASSWORD')),
+            'pin_hash'     => Hash::make($this->requireEnv('LUNA_PIN')),
             'pin_updated_at' => now(),
             'role'         => 'staff',
         ]);
 
         // Roxas Branch Cashier
         User::query()->updateOrCreate([
-            'email' => 'roxas@boutique.com',
+            'email' => $this->requireEnv('ROXAS_EMAIL'),
         ], [
-            'name'         => 'Roxas Cashier',
-            'password'     => Hash::make(env('ROXAS_PASSWORD', 'password')),
-            'pin_hash'     => Hash::make(env('ROXAS_PIN', '0000')),
+            'name'         => $this->requireEnv('ROXAS_NAME'),
+            'password'     => Hash::make($this->requireEnv('ROXAS_PASSWORD')),
+            'pin_hash'     => Hash::make($this->requireEnv('ROXAS_PIN')),
             'pin_updated_at' => now(),
             'role'         => 'staff',
         ]);
@@ -116,46 +119,63 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // Named cashier accounts (Merlina, Marites, Faith, Airen, Yssa)
+        // Named cashier accounts
         $this->call(CashierAccountsSeeder::class);
 
         // Sample Client
         Client::query()->updateOrCreate(
-            ['email' => 'jane@example.com'],
+            ['email' => env('SAMPLE_CLIENT_EMAIL', 'client@example.com')],
             [
-                'name' => 'Jane Doe',
-                'phone' => '09123456789',
+                'name' => env('SAMPLE_CLIENT_NAME', 'Sample Client'),
+                'phone' => env('SAMPLE_CLIENT_PHONE', '0000000000'),
             ]
         );
     }
 
+    /**
+     * Migrate accounts from old email addresses to current ones.
+     * Skipped automatically if legacy env vars are not configured.
+     */
     private function migrateLegacyAccounts(): void
     {
+        // Legacy migration only runs if LEGACY_* env vars are configured.
+        // Once all old accounts have been migrated, these vars can be removed.
+        $legacyAdminTo = env('LEGACY_ADMIN_TO_EMAIL');
+        if (! $legacyAdminTo) {
+            return; // Legacy migration not configured — skip.
+        }
+
+        $legacyLunaTo = env('LEGACY_LUNA_TO_EMAIL');
+
         $migrations = [
             [
-                'from' => 'admin@boutique.com',
-                'to' => 'admin@botique.com',
-                'name' => 'Admin User',
+                'from' => $this->requireEnv('ADMIN_EMAIL'),
+                'to' => $legacyAdminTo,
+                'name' => $this->requireEnv('ADMIN_NAME'),
                 'role' => 'admin',
-                'password' => env('ADMIN_PASSWORD', 'password'),
+                'password_env' => 'ADMIN_PASSWORD',
             ],
             [
-                'from' => 'cashier1@boutique.com',
-                'to' => 'luna@botique.com',
-                'name' => 'Luna Cashier',
+                'from' => env('LEGACY_CASHIER1_FROM_EMAIL', ''),
+                'to' => $legacyLunaTo,
+                'name' => $this->requireEnv('LUNA_NAME'),
                 'role' => 'staff',
-                'password' => env('LUNA_PASSWORD', 'password'),
+                'password_env' => 'LUNA_PASSWORD',
             ],
             [
-                'from' => 'cashier@boutique.com',
-                'to' => 'luna@botique.com',
-                'name' => 'Luna Cashier',
+                'from' => env('LEGACY_CASHIER_FROM_EMAIL', ''),
+                'to' => $legacyLunaTo,
+                'name' => $this->requireEnv('LUNA_NAME'),
                 'role' => 'staff',
-                'password' => env('LUNA_PASSWORD', 'password'),
+                'password_env' => 'LUNA_PASSWORD',
             ],
         ];
 
         foreach ($migrations as $m) {
+            if (empty($m['from']) || empty($m['to'])) {
+                continue;
+            }
+
             $from = User::query()->where('email', $m['from'])->first();
             if (! $from) {
                 continue;
@@ -172,8 +192,24 @@ class DatabaseSeeder extends Seeder
                 'email' => $m['to'],
                 'name' => $m['name'],
                 'role' => $m['role'],
-                'password' => Hash::make($m['password']),
+                'password' => Hash::make($this->requireEnv($m['password_env'])),
             ])->save();
         }
+    }
+
+    /**
+     * Get a required environment variable or abort with a clear message.
+     */
+    private function requireEnv(string $key): string
+    {
+        $value = env($key);
+
+        if ($value === null || $value === '') {
+            throw new \RuntimeException(
+                "Seeder requires the [{$key}] environment variable to be set in your .env file."
+            );
+        }
+
+        return $value;
     }
 }

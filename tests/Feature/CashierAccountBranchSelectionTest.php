@@ -19,7 +19,7 @@ class CashierAccountBranchSelectionTest extends TestCase
 
         $res = $this->postJson('/api/cashiers', [
             'name' => 'Cashier One',
-            'email' => 'cashier1@botique.com',
+            'email' => 'testcashier1@example.com',
             'password' => 'password123',
             'branch_ids' => [1],
         ]);
@@ -38,7 +38,7 @@ class CashierAccountBranchSelectionTest extends TestCase
         $user = User::factory()->create([
             'role' => 'staff',
             'name' => 'Cashier Three',
-            'email' => 'cashier3@botique.com',
+            'email' => 'testcashier3@example.com',
             'branch_id' => $luna->id,
         ]);
         $user->branches()->sync([$luna->id]);

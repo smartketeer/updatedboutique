@@ -1,5 +1,8 @@
 import { expect, test } from '@playwright/test';
 
+const STAFF_EMAIL    = process.env.E2E_STAFF_EMAIL    || 'staff@example.com';
+const STAFF_PASSWORD = process.env.E2E_STAFF_PASSWORD || 'password';
+
 const loginViaUi = async (page, { email, password }) => {
     await page.goto('/login', { waitUntil: 'domcontentloaded' });
 
@@ -17,7 +20,7 @@ const loginViaUi = async (page, { email, password }) => {
 
 test('POS cart does not auto-scroll (desktop + mobile)', async ({ page }) => {
     test.setTimeout(60000);
-    await loginViaUi(page, { email: 'luna@botique.com', password: 'luna123' });
+    await loginViaUi(page, { email: STAFF_EMAIL, password: STAFF_PASSWORD });
     await page.waitForURL(/\/cashier\/pos\/?$/);
 
     const summary = page.getByLabel('Products summary');

@@ -10,40 +10,44 @@ use Illuminate\Support\Facades\Hash;
 class CashierAccountsSeeder extends Seeder
 {
     /**
-     * Cashier definitions.
+     * Cashier definitions — all credentials sourced from environment variables.
+     * Nothing identifying is stored in source code.
      */
-    private array $cashiers = [
-        [
-            'name'     => 'Merlina',
-            'email'    => 'merlina@boutique.com',
-            'password' => env('CASHIER_MERLINA_PASSWORD', 'password'),
-            'pin'      => env('CASHIER_MERLINA_PIN', '0000'),
-        ],
-        [
-            'name'     => 'Marites',
-            'email'    => 'marites@boutique.com',
-            'password' => env('CASHIER_MARITES_PASSWORD', 'password'),
-            'pin'      => env('CASHIER_MARITES_PIN', '0000'),
-        ],
-        [
-            'name'     => 'Faith',
-            'email'    => 'faith@boutique.com',
-            'password' => env('CASHIER_FAITH_PASSWORD', 'password'),
-            'pin'      => env('CASHIER_FAITH_PIN', '0000'),
-        ],
-        [
-            'name'     => 'Airen',
-            'email'    => 'airen@boutique.com',
-            'password' => env('CASHIER_AIREN_PASSWORD', 'password'),
-            'pin'      => env('CASHIER_AIREN_PIN', '0000'),
-        ],
-        [
-            'name'     => 'Yssa',
-            'email'    => 'yssa@boutique.com',
-            'password' => env('CASHIER_YSSA_PASSWORD', 'password'),
-            'pin'      => env('CASHIER_YSSA_PIN', '0000'),
-        ],
-    ];
+    private function getCashiers(): array
+    {
+        return [
+            [
+                'name'     => $this->requireEnv('CASHIER_MERLINA_NAME'),
+                'email'    => $this->requireEnv('CASHIER_MERLINA_EMAIL'),
+                'password' => $this->requireEnv('CASHIER_MERLINA_PASSWORD'),
+                'pin'      => $this->requireEnv('CASHIER_MERLINA_PIN'),
+            ],
+            [
+                'name'     => $this->requireEnv('CASHIER_MARITES_NAME'),
+                'email'    => $this->requireEnv('CASHIER_MARITES_EMAIL'),
+                'password' => $this->requireEnv('CASHIER_MARITES_PASSWORD'),
+                'pin'      => $this->requireEnv('CASHIER_MARITES_PIN'),
+            ],
+            [
+                'name'     => $this->requireEnv('CASHIER_FAITH_NAME'),
+                'email'    => $this->requireEnv('CASHIER_FAITH_EMAIL'),
+                'password' => $this->requireEnv('CASHIER_FAITH_PASSWORD'),
+                'pin'      => $this->requireEnv('CASHIER_FAITH_PIN'),
+            ],
+            [
+                'name'     => $this->requireEnv('CASHIER_AIREN_NAME'),
+                'email'    => $this->requireEnv('CASHIER_AIREN_EMAIL'),
+                'password' => $this->requireEnv('CASHIER_AIREN_PASSWORD'),
+                'pin'      => $this->requireEnv('CASHIER_AIREN_PIN'),
+            ],
+            [
+                'name'     => $this->requireEnv('CASHIER_YSSA_NAME'),
+                'email'    => $this->requireEnv('CASHIER_YSSA_EMAIL'),
+                'password' => $this->requireEnv('CASHIER_YSSA_PASSWORD'),
+                'pin'      => $this->requireEnv('CASHIER_YSSA_PIN'),
+            ],
+        ];
+    }
 
     public function run(): void
     {
@@ -55,7 +59,7 @@ class CashierAccountsSeeder extends Seeder
             ->pluck('id')
             ->toArray();
 
-        foreach ($this->cashiers as $data) {
+        foreach ($this->getCashiers() as $data) {
             $user = User::query()->updateOrCreate(
                 ['email' => $data['email']],
                 [
@@ -78,5 +82,21 @@ class CashierAccountsSeeder extends Seeder
 
             $this->command->info("Cashier seeded: {$user->name} <{$user->email}>");
         }
+    }
+
+    /**
+     * Get a required environment variable or abort with a clear message.
+     */
+    private function requireEnv(string $key): string
+    {
+        $value = env($key);
+
+        if ($value === null || $value === '') {
+            throw new \RuntimeException(
+                "Seeder requires the [{$key}] environment variable to be set in your .env file."
+            );
+        }
+
+        return $value;
     }
 }

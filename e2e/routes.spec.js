@@ -1,5 +1,15 @@
 import { expect, test } from '@playwright/test';
 
+/**
+ * Test credentials are sourced from environment variables to keep
+ * them out of version control. Set E2E_ADMIN_EMAIL, E2E_ADMIN_PASSWORD,
+ * E2E_STAFF_EMAIL, and E2E_STAFF_PASSWORD in your .env or CI config.
+ */
+const ADMIN_EMAIL    = process.env.E2E_ADMIN_EMAIL    || 'admin@example.com';
+const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD || 'password';
+const STAFF_EMAIL    = process.env.E2E_STAFF_EMAIL    || 'staff@example.com';
+const STAFF_PASSWORD = process.env.E2E_STAFF_PASSWORD || 'password';
+
 const unauthPaths = ['/login', '/', '/admin', '/admin/reports', '/cashier/pos', '/cashier/history'];
 
 const loginViaUi = async (page, { email, password }) => {
@@ -39,7 +49,7 @@ test('admin routes render layout when authenticated', async ({ page }) => {
     const pageErrors = [];
     page.on('pageerror', (err) => pageErrors.push(String(err?.message || err)));
 
-    await loginViaUi(page, { email: 'admin@botique.com', password: 'admin123' });
+    await loginViaUi(page, { email: ADMIN_EMAIL, password: ADMIN_PASSWORD });
     await page.waitForURL(/\/admin\/?$/);
     expect(pageErrors).toEqual([]);
     await expect(page.locator('#app')).not.toBeEmpty();
@@ -83,7 +93,7 @@ test('staff routes render layout when authenticated', async ({ page }) => {
     const pageErrors = [];
     page.on('pageerror', (err) => pageErrors.push(String(err?.message || err)));
 
-    await loginViaUi(page, { email: 'luna@botique.com', password: 'luna123' });
+    await loginViaUi(page, { email: STAFF_EMAIL, password: STAFF_PASSWORD });
     await page.waitForURL(/\/cashier\/pos\/?$/);
     expect(pageErrors).toEqual([]);
     await expect(page.locator('#app')).not.toBeEmpty();
@@ -106,7 +116,7 @@ test('staff routes render layout when authenticated', async ({ page }) => {
 });
 
 test('staff POS interactions work on desktop', async ({ page }) => {
-    await loginViaUi(page, { email: 'luna@botique.com', password: 'luna123' });
+    await loginViaUi(page, { email: STAFF_EMAIL, password: STAFF_PASSWORD });
     await page.waitForURL(/\/cashier\/pos\/?$/);
 
     const search = page.locator('input[aria-label="Search products"]:visible');
@@ -121,7 +131,7 @@ test('staff POS interactions work on desktop', async ({ page }) => {
 test('staff POS overlays do not block interactions on mobile', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
 
-    await loginViaUi(page, { email: 'luna@botique.com', password: 'luna123' });
+    await loginViaUi(page, { email: STAFF_EMAIL, password: STAFF_PASSWORD });
     await page.waitForURL(/\/cashier\/pos\/?$/);
 
     await page.getByRole('button', { name: 'Categories' }).click();

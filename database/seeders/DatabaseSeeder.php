@@ -46,27 +46,6 @@ class DatabaseSeeder extends Seeder
             'role'         => 'admin',
         ]);
 
-        // Luna Branch Cashier
-        User::query()->updateOrCreate([
-            'email' => $this->requireEnv('LUNA_EMAIL'),
-        ], [
-            'name'         => $this->requireEnv('LUNA_NAME'),
-            'password'     => Hash::make($this->requireEnv('LUNA_PASSWORD')),
-            'pin_hash'     => Hash::make($this->requireEnv('LUNA_PIN')),
-            'pin_updated_at' => now(),
-            'role'         => 'staff',
-        ]);
-
-        // Roxas Branch Cashier
-        User::query()->updateOrCreate([
-            'email' => $this->requireEnv('ROXAS_EMAIL'),
-        ], [
-            'name'         => $this->requireEnv('ROXAS_NAME'),
-            'password'     => Hash::make($this->requireEnv('ROXAS_PASSWORD')),
-            'pin_hash'     => Hash::make($this->requireEnv('ROXAS_PIN')),
-            'pin_updated_at' => now(),
-            'role'         => 'staff',
-        ]);
 
         // Categories
         $catProduct = Category::query()->firstOrCreate(['name' => 'Beauty Products'], ['type' => 'product']);
@@ -145,8 +124,6 @@ class DatabaseSeeder extends Seeder
             return; // Legacy migration not configured — skip.
         }
 
-        $legacyLunaTo = env('LEGACY_LUNA_TO_EMAIL');
-
         $migrations = [
             [
                 'from' => $this->requireEnv('ADMIN_EMAIL'),
@@ -154,20 +131,6 @@ class DatabaseSeeder extends Seeder
                 'name' => $this->requireEnv('ADMIN_NAME'),
                 'role' => 'admin',
                 'password_env' => 'ADMIN_PASSWORD',
-            ],
-            [
-                'from' => env('LEGACY_CASHIER1_FROM_EMAIL', ''),
-                'to' => $legacyLunaTo,
-                'name' => $this->requireEnv('LUNA_NAME'),
-                'role' => 'staff',
-                'password_env' => 'LUNA_PASSWORD',
-            ],
-            [
-                'from' => env('LEGACY_CASHIER_FROM_EMAIL', ''),
-                'to' => $legacyLunaTo,
-                'name' => $this->requireEnv('LUNA_NAME'),
-                'role' => 'staff',
-                'password_env' => 'LUNA_PASSWORD',
             ],
         ];
 

@@ -45,6 +45,11 @@ const Login = () => {
             return { ok: false, message: 'Only one @ symbol is allowed.' };
         }
         
+        // Prevent special characters to avoid potential injection or invalid inputs
+        if (!/^[a-z0-9\.@]+$/.test(normalizedInput)) {
+            return { ok: false, message: 'Special characters are not allowed (except . and @).' };
+        }
+        
         if (!normalizedInput.includes('@')) {
             // Silently append domain if user just typed a username
             fullEmail = `${normalizedInput}@boutique.com`;

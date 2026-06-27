@@ -292,6 +292,18 @@ const CashierAccounts = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+
+        const atCount = (form.email.match(/@/g) || []).length;
+        if (atCount > 1) {
+            setError('Only one @ symbol is allowed in the email.');
+            return;
+        }
+
+        if (!/^[a-z0-9\.@]+$/i.test(form.email)) {
+            setError('Special characters are not allowed in the email (except . and @).');
+            return;
+        }
+
         try {
             const branchIds = (form.branch_ids || []).map((id) => Number(id)).filter((n) => Number.isFinite(n));
             if (!branchIds.length) {
@@ -408,6 +420,9 @@ const CashierAccounts = () => {
                                 className="w-full px-3 py-2 border border-[#19140035] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#d94a79]/25 bg-white"
                                 required
                             />
+                            <p className="text-[10px] text-[#a6a6a6] mt-1 ml-1">
+                                Note: Special characters are not allowed, only letters, numbers, dot (.), and max one @ symbol.
+                            </p>
                         </div>
 
                         <div>

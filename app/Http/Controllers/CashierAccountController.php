@@ -40,7 +40,7 @@ class CashierAccountController extends Controller
             'branch_ids' => 'required|array|min:1|max:20',
             'branch_ids.*' => 'integer|distinct|exists:branches,id',
         ], [
-            'email.regex' => 'The email must end with @boutique.com and contain no special characters.'
+            'email.regex' => 'The email must end with @boutique.com and contain only letters, numbers, and periods.'
         ]);
 
         $branchIds = array_map('intval', $validated['branch_ids']);
@@ -82,7 +82,7 @@ class CashierAccountController extends Controller
             'branch_ids' => 'sometimes|required|array|min:1|max:20',
             'branch_ids.*' => 'integer|distinct|exists:branches,id',
         ], [
-            'email.regex' => 'The email must end with @boutique.com and contain no special characters.'
+            'email.regex' => 'The email must end with @boutique.com and contain only letters, numbers, and periods.'
         ]);
 
         $data = collect($validated)->except('password')->toArray();

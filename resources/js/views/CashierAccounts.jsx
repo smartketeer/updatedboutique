@@ -301,7 +301,7 @@ const CashierAccounts = () => {
         }
 
         if (!/^[a-z0-9\.]+@boutique\.com$/i.test(trimmedEmail)) {
-            setError('The email must end with @boutique.com and contain no special characters.');
+            setError('The email must end with @boutique.com and contain only letters, numbers, and periods.');
             return;
         }
 

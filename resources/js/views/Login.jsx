@@ -47,7 +47,7 @@ const Login = () => {
         
         // Prevent special characters to avoid potential injection or invalid inputs
         if (!/^[a-z0-9\.@]+$/.test(normalizedInput)) {
-            return { ok: false, message: 'Special characters are not allowed (except . and @).' };
+            return { ok: false, message: 'Special characters are not allowed.' };
         }
         
         if (!normalizedInput.includes('@')) {

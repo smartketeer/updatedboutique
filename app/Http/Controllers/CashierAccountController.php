@@ -34,18 +34,13 @@ class CashierAccountController extends Controller
                 'email',
                 'max:255',
                 'unique:users,email',
-                'regex:/^[a-z0-9\.@]+$/i',
-                function ($attribute, $value, $fail) {
-                    if (substr_count($value, '@') > 1) {
-                        $fail('Only one @ symbol is allowed in the email.');
-                    }
-                },
+                'regex:/^[a-z0-9\.]+@boutique\.com$/i',
             ],
             'password' => 'required|string|min:8',
             'branch_ids' => 'required|array|min:1|max:20',
             'branch_ids.*' => 'integer|distinct|exists:branches,id',
         ], [
-            'email.regex' => 'Special characters are not allowed in the email (except . and @).'
+            'email.regex' => 'The email must end with @boutique.com and contain no special characters.'
         ]);
 
         $branchIds = array_map('intval', $validated['branch_ids']);
@@ -81,18 +76,13 @@ class CashierAccountController extends Controller
                 'email',
                 'max:255',
                 Rule::unique('users', 'email')->ignore($user->id),
-                'regex:/^[a-z0-9\.@]+$/i',
-                function ($attribute, $value, $fail) {
-                    if (substr_count($value, '@') > 1) {
-                        $fail('Only one @ symbol is allowed in the email.');
-                    }
-                },
+                'regex:/^[a-z0-9\.]+@boutique\.com$/i',
             ],
             'password' => 'nullable|string|min:8',
             'branch_ids' => 'sometimes|required|array|min:1|max:20',
             'branch_ids.*' => 'integer|distinct|exists:branches,id',
         ], [
-            'email.regex' => 'Special characters are not allowed in the email (except . and @).'
+            'email.regex' => 'The email must end with @boutique.com and contain no special characters.'
         ]);
 
         $data = collect($validated)->except('password')->toArray();

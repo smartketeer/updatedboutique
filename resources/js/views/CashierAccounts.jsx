@@ -300,8 +300,8 @@ const CashierAccounts = () => {
             return;
         }
 
-        if (!/^[a-z0-9\.@]+$/i.test(trimmedEmail)) {
-            setError('Special characters are not allowed.');
+        if (!/^[a-z0-9\.]+@boutique\.com$/i.test(trimmedEmail)) {
+            setError('The email must end with @boutique.com and contain no special characters.');
             return;
         }
 
@@ -429,7 +429,7 @@ const CashierAccounts = () => {
                                 required
                             />
                             <p className="text-[10px] text-[#a6a6a6] mt-1 ml-1">
-                                Note: Special characters are not allowed, only letters, numbers, dot (.), and max one @ symbol.
+                                Note: Email must end with @boutique.com and contain no special characters (except .).
                             </p>
                         </div>
 

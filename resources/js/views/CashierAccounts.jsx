@@ -293,13 +293,14 @@ const CashierAccounts = () => {
         e.preventDefault();
         setError('');
 
-        const atCount = (form.email.match(/@/g) || []).length;
+        const trimmedEmail = form.email.trim();
+        const atCount = (trimmedEmail.match(/@/g) || []).length;
         if (atCount > 1) {
             setError('Only one @ symbol is allowed in the email.');
             return;
         }
 
-        if (!/^[a-z0-9\.@]+$/i.test(form.email)) {
+        if (!/^[a-z0-9\.@]+$/i.test(trimmedEmail)) {
             setError('Special characters are not allowed in the email (except . and @).');
             return;
         }
@@ -312,8 +313,8 @@ const CashierAccounts = () => {
             }
 
             const payload = {
-                name: form.name,
-                email: form.email,
+                name: form.name.trim(),
+                email: trimmedEmail,
                 branch_ids: branchIds,
             };
 
@@ -334,7 +335,14 @@ const CashierAccounts = () => {
             resetForm();
             fetchCashiers();
         } catch (err) {
-            setError(err.response?.data?.message || 'Save failed');
+            const responseData = err.response?.data;
+            if (responseData?.errors) {
+                // Get the first specific validation error
+                const firstError = Object.values(responseData.errors)[0][0];
+                setError(firstError);
+            } else {
+                setError(responseData?.message || 'Save failed');
+            }
         }
     };
 

@@ -8,6 +8,7 @@ use App\Services\BranchResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -21,9 +22,22 @@ class AuthController extends Controller
 
         $email = strtolower((string) $request->email);
 
+        $throttleKey = $email . '|' . $request->ip();
+
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            $minutes = ceil($seconds / 60);
+            
+            throw ValidationException::withMessages([
+                'email' => ["Too many login attempts. Please try again in {$minutes} minutes."],
+            ]);
+        }
+
         $user = User::where('email', $email)->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
+            RateLimiter::hit($throttleKey, 900); // 15 minutes lockout
+
             \Log::warning('Login attempt failed for user: '.$request->email, [
                 'ip'          => $request->ip(),
             ]);
@@ -31,6 +45,8 @@ class AuthController extends Controller
                 'email' => ['The provided credentials are incorrect.'],
             ]);
         }
+
+        RateLimiter::clear($throttleKey);
 
         try {
             $token = $user->createToken('auth_token')->plainTextToken;

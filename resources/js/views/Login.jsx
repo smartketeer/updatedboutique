@@ -34,19 +34,20 @@ const Login = () => {
     }, []);
 
     const inferred = useMemo(() => {
-        const normalizedEmail = String(email || '').trim().toLowerCase();
-        const parts = normalizedEmail.split('@');
-        const localPart = parts[0] || '';
-        const domain = parts[1] || '';
+        const normalizedInput = String(email || '').trim().toLowerCase();
+        if (!normalizedInput) return { ok: false, message: '' };
+        
+        let localPart = normalizedInput;
+        let fullEmail = normalizedInput;
+        
+        if (!normalizedInput.includes('@')) {
+            // Silently append domain if user just typed a username
+            fullEmail = `${normalizedInput}@boutique.com`;
+        } else {
+            localPart = normalizedInput.split('@')[0];
+        }
 
-        if (!localPart || !domain) return { ok: false, message: '' };
-        if (domain !== 'boutique.com') {
-            return { ok: false, message: 'Email must end with @boutique.com.' };
-        }
-        if (!/^[a-z0-9._-]+$/.test(localPart)) {
-            return { ok: false, message: 'Email username contains invalid characters.' };
-        }
-        return { ok: true, localPart };
+        return { ok: true, localPart, fullEmail };
     }, [email]);
 
     const isAdminEmail = inferred.ok && inferred.localPart === 'admin';
@@ -72,7 +73,7 @@ const Login = () => {
                 setLoading(false);
                 return;
             }
-            const user = await login(email, password, selectedBranch || 'luna');
+            const user = await login(inferred.fullEmail, password, selectedBranch || 'luna');
             // The authStore.login already handles branch selection via /api/select-branch
             // Navigate to the role-appropriate page
             navigate('/');
@@ -149,15 +150,15 @@ const Login = () => {
                 <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
                     <div>
                         <label htmlFor="login-email" className="block text-sm font-medium text-[#818181] mb-2">
-                            Email Address
+                            Username or Email
                         </label>
                         <input
                             id="login-email"
-                            type="email"
+                            type="text"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className="w-full px-4 py-3 rounded-xl border border-[#a6a6a6] bg-white text-[#818181] placeholder-[#cbcbcb] focus:outline-none focus:ring-2 focus:ring-[#818181]/50 focus:border-[#818181] transition-all font-medium"
-                            placeholder="name@boutique.com"
+                            placeholder="username"
                             autoComplete="off"
                             required
                         />

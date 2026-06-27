@@ -20,11 +20,6 @@ class AuthController extends Controller
         ]);
 
         $email = strtolower((string) $request->email);
-        if (! preg_match('/^[a-z0-9._-]+@boutique\.com$/', $email)) {
-            throw ValidationException::withMessages([
-                'email' => ['Unauthorized email format. Use a valid @boutique.com email.'],
-            ]);
-        }
 
         $user = User::where('email', $email)->first();
 

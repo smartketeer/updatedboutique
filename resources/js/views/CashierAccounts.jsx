@@ -301,7 +301,7 @@ const CashierAccounts = () => {
         }
 
         if (!/^[a-z0-9\.@]+$/i.test(trimmedEmail)) {
-            setError('Special characters are not allowed in the email (except . and @).');
+            setError('Special characters are not allowed.');
             return;
         }
 
@@ -398,7 +398,7 @@ const CashierAccounts = () => {
             </header>
 
             {error ? (
-                <div className="p-3 bg-[#dddddd] text-[#818181] border border-red-100 rounded-lg text-sm">{error}</div>
+                <div className="p-3 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm font-medium">{error}</div>
             ) : null}
 
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">

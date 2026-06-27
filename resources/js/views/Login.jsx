@@ -40,6 +40,11 @@ const Login = () => {
         let localPart = normalizedInput;
         let fullEmail = normalizedInput;
         
+        const atCount = (normalizedInput.match(/@/g) || []).length;
+        if (atCount > 1) {
+            return { ok: false, message: 'Only one @ symbol is allowed.' };
+        }
+        
         if (!normalizedInput.includes('@')) {
             // Silently append domain if user just typed a username
             fullEmail = `${normalizedInput}@boutique.com`;

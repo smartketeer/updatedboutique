@@ -424,58 +424,7 @@ const StockManagement = () => {
                                 ))}
                             </select>
 
-                            <Menu as="div" className="relative">
-                                <Menu.Button
-                                    type="button"
-                                    aria-label="Catalog actions"
-                                    title="Catalog actions"
-                                    className="h-11 inline-flex items-center justify-center gap-2 px-5 rounded-xl bg-[#818181] text-white hover:bg-[#818181] active:bg-[#818181]/90 transition-all font-semibold text-sm shadow-md shadow-black/10"
-                                >
-                                    <Plus size={18} /> Add
-                                </Menu.Button>
-                                <Transition
-                                    as={Fragment}
-                                    enter="transition ease-out duration-100"
-                                    enterFrom="transform opacity-0 scale-95"
-                                    enterTo="transform opacity-100 scale-100"
-                                    leave="transition ease-in duration-75"
-                                    leaveFrom="transform opacity-100 scale-100"
-                                    leaveTo="transform opacity-0 scale-95"
-                                >
-                                    <Menu.Items className="absolute right-0 mt-2 w-64 origin-top-right rounded-2xl border border-[#cbcbcb] bg-white shadow-xl focus:outline-none overflow-hidden z-50">
-                                        <div className="py-1">
-                                            <Menu.Item>
-                                                {({ active }) => (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setIsAddItemOpen(true)}
-                                                        className={`w-full px-4 py-3 text-left text-sm font-semibold inline-flex items-center gap-2 ${
-                                                            active ? 'bg-[#dddddd] text-[#818181]' : 'text-[#818181]'
-                                                        }`}
-                                                    >
-                                                        <Package size={16} className="text-[#a6a6a6]" />
-                                                        Add Item
-                                                    </button>
-                                                )}
-                                            </Menu.Item>
-                                            <Menu.Item>
-                                                {({ active }) => (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setIsAddCategoryOpen(true)}
-                                                        className={`w-full px-4 py-3 text-left text-sm font-semibold inline-flex items-center gap-2 ${
-                                                            active ? 'bg-[#dddddd] text-[#818181]' : 'text-[#818181]'
-                                                        }`}
-                                                    >
-                                                        <Plus size={16} className="text-[#a6a6a6]" />
-                                                        Add Category
-                                                    </button>
-                                                )}
-                                            </Menu.Item>
-                                        </div>
-                                    </Menu.Items>
-                                </Transition>
-                            </Menu>
+
                         </div>
                     </div>
                 </div>

@@ -517,8 +517,8 @@ const StockManagement = () => {
                                     <input
                                         id="adjust-search"
                                         type="text"
-                                        value={itemSearch}
-                                        onChange={(e) => setItemSearch(e.target.value)}
+                                        value={adjustSearch}
+                                        onChange={(e) => setAdjustSearch(e.target.value)}
                                         placeholder="Search by name…"
                                         className="w-full pl-9 pr-3 py-2 border border-[#cbcbcb] rounded-xl text-sm font-medium text-[#818181] bg-white"
                                     />

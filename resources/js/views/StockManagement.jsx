@@ -794,8 +794,8 @@ const StockManagement = () => {
                         </div>
                     </div>
 
-                    <div className="lg:col-span-2 rounded-2xl border border-[#cbcbcb] bg-white overflow-hidden">
-                        <div className="px-4 py-3 border-b border-[#cbcbcb] flex items-center justify-between gap-3">
+                    <div className="lg:col-span-2 rounded-2xl border border-[#cbcbcb] bg-white flex flex-col shadow-sm">
+                        <div className="px-4 py-3 border-b border-[#cbcbcb] flex items-center justify-between gap-3 rounded-t-2xl bg-white">
                             <div className="text-sm font-semibold text-[#818181]">Recent entries</div>
                             <button
                                 type="button"
@@ -810,7 +810,7 @@ const StockManagement = () => {
                             <div className="p-4 text-sm font-medium text-[#818181] bg-[#dddddd] border-b border-red-100">{movementsError}</div>
                         ) : null}
 
-                        <div className="overflow-auto" style={{maxHeight: 'calc(100vh - 26rem)'}}>
+                        <div className="overflow-auto flex-1 rounded-b-2xl pb-2" style={{maxHeight: 'calc(100vh - 18rem)'}}>
                             <table className="w-full text-left">
                                 <thead className="sticky top-0 bg-white z-10">
                                     <tr className="text-[#a6a6a6] text-xs font-semibold uppercase tracking-widest border-b border-[#cbcbcb]">
